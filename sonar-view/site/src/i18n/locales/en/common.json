@@ -1,0 +1,29 @@
+{
+  "button": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete"
+  },
+  "status": {
+    "loading": "Loading...",
+    "success": "Success",
+    "failed": "Failed"
+  },
+  "close": "Close",
+  "apiError": {
+    "title": "API Request Error",
+    "description": "Below are the details of the request for troubleshooting.",
+    "method": "Method",
+    "status": "Status",
+    "url": "URL",
+    "time": "Time",
+    "requestPayload": "Request Payload",
+    "responseBody": "Response Body",
+    "rawError": "Raw Error"
+  },
+  "search": {
+    "label": "Search",
+    "comingSoon": "Search feature coming soon, stay tuned!"
+  }
+}

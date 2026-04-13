@@ -1,0 +1,235 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1776085527151,
+  "projectRoot": "/Users/castlexu/github/sonar/sonar-store",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Go",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "go.mod"
+        ]
+      },
+      {
+        "name": "C/C++",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "Makefile"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "go",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "make build",
+    "testCommand": "make test",
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "cmd": {
+      "path": "cmd",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776085527132,
+      "keyFiles": []
+    },
+    "config": {
+      "path": "config",
+      "purpose": "Configuration files",
+      "fileCount": 2,
+      "lastAccessed": 1776085527132,
+      "keyFiles": [
+        "config.go",
+        "config.yaml"
+      ]
+    },
+    "internal": {
+      "path": "internal",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776085527132,
+      "keyFiles": []
+    },
+    "pkg": {
+      "path": "pkg",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776085527132,
+      "keyFiles": []
+    },
+    "internal/api": {
+      "path": "internal/api",
+      "purpose": "API routes",
+      "fileCount": 0,
+      "lastAccessed": 1776085527133,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "internal/handler/metrics/handler.go",
+      "accessCount": 15,
+      "lastAccessed": 1776085632505,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 11,
+      "lastAccessed": 1776085597258,
+      "type": "directory"
+    },
+    {
+      "path": "internal/router/router.go",
+      "accessCount": 10,
+      "lastAccessed": 1776085689923,
+      "type": "file"
+    },
+    {
+      "path": "cmd/server/main.go",
+      "accessCount": 8,
+      "lastAccessed": 1775822912876,
+      "type": "file"
+    },
+    {
+      "path": "pkg/storage/interface.go",
+      "accessCount": 5,
+      "lastAccessed": 1775822607898,
+      "type": "file"
+    },
+    {
+      "path": "internal/api/sonar-store/metrics/v1/metrics.go",
+      "accessCount": 5,
+      "lastAccessed": 1776085316329,
+      "type": "file"
+    },
+    {
+      "path": "pkg/storage/prometheus.go",
+      "accessCount": 5,
+      "lastAccessed": 1776085322582,
+      "type": "file"
+    },
+    {
+      "path": "pkg/storage/metric_storage.go",
+      "accessCount": 4,
+      "lastAccessed": 1775822723665,
+      "type": "file"
+    },
+    {
+      "path": "pkg/serializer/serializer.go",
+      "accessCount": 4,
+      "lastAccessed": 1776085330402,
+      "type": "file"
+    },
+    {
+      "path": "internal/api/sonar-store/tap/v1/tap.go",
+      "accessCount": 3,
+      "lastAccessed": 1775822619820,
+      "type": "file"
+    },
+    {
+      "path": "internal/provider/metric_storage.go",
+      "accessCount": 3,
+      "lastAccessed": 1775822870355,
+      "type": "file"
+    },
+    {
+      "path": "internal/handler/tap/handler.go",
+      "accessCount": 3,
+      "lastAccessed": 1775822910930,
+      "type": "file"
+    },
+    {
+      "path": "pkg/storage/serializer.go",
+      "accessCount": 3,
+      "lastAccessed": 1776085330506,
+      "type": "file"
+    },
+    {
+      "path": "internal/api/sonar-store/base/v1/base.go",
+      "accessCount": 2,
+      "lastAccessed": 1775822676238,
+      "type": "file"
+    },
+    {
+      "path": "config/config.go",
+      "accessCount": 2,
+      "lastAccessed": 1775822917967,
+      "type": "file"
+    },
+    {
+      "path": "internal",
+      "accessCount": 2,
+      "lastAccessed": 1776085594854,
+      "type": "directory"
+    },
+    {
+      "path": "pkg/tap/manager.go",
+      "accessCount": 2,
+      "lastAccessed": 1776085626452,
+      "type": "file"
+    },
+    {
+      "path": "pkg/storage/errors.go",
+      "accessCount": 1,
+      "lastAccessed": 1775822184768,
+      "type": "file"
+    },
+    {
+      "path": "config/config.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1775822354160,
+      "type": "file"
+    },
+    {
+      "path": "internal/repo/metrics_repo.go",
+      "accessCount": 1,
+      "lastAccessed": 1775822511264,
+      "type": "file"
+    },
+    {
+      "path": "internal/api/sonar-store/metrics/v1",
+      "accessCount": 1,
+      "lastAccessed": 1775822706145,
+      "type": "directory"
+    },
+    {
+      "path": "internal/api",
+      "accessCount": 1,
+      "lastAccessed": 1776085388812,
+      "type": "directory"
+    },
+    {
+      "path": "pkg/tap",
+      "accessCount": 1,
+      "lastAccessed": 1776085620837,
+      "type": "directory"
+    },
+    {
+      "path": "internal/handler/metrics",
+      "accessCount": 1,
+      "lastAccessed": 1776085697867,
+      "type": "directory"
+    }
+  ],
+  "userDirectives": []
+}

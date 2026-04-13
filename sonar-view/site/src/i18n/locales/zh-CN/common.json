@@ -1,0 +1,29 @@
+{
+  "button": {
+    "confirm": "确认",
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除"
+  },
+  "status": {
+    "loading": "加载中...",
+    "success": "成功",
+    "failed": "失败"
+  },
+  "close": "关闭",
+  "apiError": {
+    "title": "API 请求错误",
+    "description": "以下是请求的详细信息，可用于问题排查。",
+    "method": "请求方法",
+    "status": "状态码",
+    "url": "请求地址",
+    "time": "发生时间",
+    "requestPayload": "请求参数",
+    "responseBody": "响应内容",
+    "rawError": "原始错误"
+  },
+  "search": {
+    "label": "搜索",
+    "comingSoon": "搜索功能即将推出，敬请期待！"
+  }
+}

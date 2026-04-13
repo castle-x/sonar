@@ -1,0 +1,14 @@
+---
+description: 当新增协议或者修改thrfit协议或者修改项目服务配置config.yaml.tmpl时使用该规则。
+alwaysApply: false
+enabled: true
+updatedAt: 2026-01-22T12:13:10.853Z
+provider: 
+---
+
+1. 如果新建一个thrift文件 必须放在 项目目录/apis/项目名/资源名/版本/资源名.thrift
+2. 新建的thrift文件 namespace必须是 go 项目名.资源名.版本
+3. thrift转go文件 如果是新建的thrift，必须使用命令"hzx update" , 生成协议go文件和biz结构，以及自动的依赖注入，通常如果不报错，可直接编译。
+4. 如果thrift更新了某些结构体字段，只需要执行"hzx update api" 即可生成新的协议go文件
+5. 如果config.yaml.tmpl更新，需要执行"hzx update config" 来刷新config.go
+6. config.go会自动把config.go中import的goutils包替换为外部项目 github.com/rightkey-cdg/goutils，每次更新config.yaml.tmpl后需要你手动改为 git.woa.com/castlexu/goutils

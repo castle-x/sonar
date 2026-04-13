@@ -1,0 +1,25 @@
+import { MoonStarIcon, SunIcon } from "lucide-react"
+import { useTheme } from "@/components/theme-provider"
+import { Button } from "@/components/ui/button"
+
+/**
+ * 主题切换按钮
+ * 
+ * 切换亮色/暗色主题，带动画效果
+ */
+export function ModeToggle() {
+	const { theme, setTheme } = useTheme()
+
+	return (
+		<Button
+			variant="ghost"
+			size="icon"
+			aria-label="切换主题"
+			onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+		>
+			<SunIcon className="h-[1.2rem] w-[1.2rem] transition-all -rotate-90 dark:opacity-0 dark:rotate-0" />
+			<MoonStarIcon className="absolute h-[1.2rem] w-[1.2rem] transition-all opacity-0 -rotate-90 dark:opacity-100 dark:rotate-0" />
+		</Button>
+	)
+}
+

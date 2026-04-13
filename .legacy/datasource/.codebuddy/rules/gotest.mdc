@@ -1,0 +1,400 @@
+---
+description: 所有go的单元测试代码编写和调试，必须遵循这个规则
+alwaysApply: false
+enabled: true
+updatedAt: 2026-01-22T06:45:39.152Z
+provider: 
+---
+
+你是一个专业的单元测试开发助手，所有代码必须严格遵循以下编码规范。
+
+## 项目要求
+
+### 测试用例生成策略
+- **质量优先**: 优先保证生成的测试用例能够正确运行，确保代码质量
+- **完整覆盖**: 生成全面的测试用例，包括正常流程、边界情况和异常处理
+- **场景丰富**: 根据函数特性生成多种测试场景，提高测试覆盖率
+
+> **执行流程详见**: "AI 测试生成指导原则"章节
+
+### Go 版本要求
+- Go 版本 >= 1.18
+
+### 测试技术栈
+
+1. **测试框架**: Go 内置 `testing` 包
+2. **断言库**: [Testify](https://github.com/stretchr/testify)
+   - 使用 `testify/assert` 进行断言
+   - 使用 `testify/require` 进行致命断言
+   - 使用 `testify/suite` 进行测试套件管理（可选）
+
+3. **Mock 框架**: [gomonkey](https://github.com/agiledragon/gomonkey)
+   - 用于函数替换和方法 Mock
+   - 支持对全局变量、函数、方法进行替换
+   - **重要**: gomonkey 需要禁用内联优化才能正常工作
+
+## 测试文件组织规范
+
+### 文件命名
+- 测试文件必须以 `_test.go` 结尾
+- 测试文件应与被测文件在同一包中
+- 示例：`policy.go` 的测试文件为 `policy_test.go`
+
+### 文件位置
+```
+demo/
+├── service/
+│   ├── policy/
+│   │   ├── policy.go
+│   │   └── policy_test.go      # 与源码同级目录
+│   └── role/
+│       ├── role.go
+│       └── role_test.go
+└── test/                       # 公共测试工具和辅助函数
+    ├── mock/
+    └── fixtures/
+```
+
+## 测试代码规范
+
+### 测试函数命名
+```go
+// 基本格式
+func Test<结构体名>_<函数名>_<场景描述>_<期望结果>(t *testing.T) {
+    // 测试代码
+}
+
+// 示例
+func TestPolicyService_CheckFullPolicy_ValidPolicy_ShouldPass(t *testing.T) {
+    // 测试场景：验证完整有效的策略配置应该通过检查
+    // ...
+}
+
+func TestRoleService_GetRole_InvalidRoleID_ShouldReturnError(t *testing.T) {
+    // 测试场景：传入无效角色ID时应返回相应错误信息
+    // ...
+}
+
+func TestUserService_CreateUser_DuplicateUsername_ShouldReturnConflictError(t *testing.T) {
+    // 测试场景：创建用户时用户名重复应返回冲突错误
+    // ...
+}
+```
+
+### 测试注释规范
+每个测试函数必须包含以下注释信息：
+
+```go
+func TestPolicyService_UpdatePolicy_PolicyNotExists_ShouldReturnNotFoundError(t *testing.T) {
+    // 测试场景：更新不存在的策略时应返回未找到错误
+    // 前置条件：数据库中不存在目标策略ID
+    // 输入数据：不存在的策略ID和更新内容
+    // 预期结果：返回策略未找到的错误信息
+    
+    // 测试实现...
+}
+```
+
+### 测试结构
+
+> **示例说明**: 以下示例中的类型和方法名（如 `daoInstance`、`dao.StrategyDAO`、`model.Strategy`、`GetPolicyRequest` 等）仅作为示例演示，需要根据项目实际的类型命名进行替换。
+
+#### 单个测试模式（推荐）
+每个测试函数专注于一个具体的测试场景，使测试更易理解和维护，具有以下优势：
+- **易于理解**: 测试逻辑清晰，场景明确
+- **易于调试**: 测试失败时能快速定位问题
+- **易于维护**: 修改某个场景不影响其他测试
+- **易于扩展**: 添加新场景不需要修改现有代码
+
+```go
+// 测试场景：获取有效策略ID对应的策略信息
+func TestPolicyService_GetPolicy_ValidPolicyID_ShouldReturnPolicy(t *testing.T) {
+    // 准备测试数据
+    expectedPolicy := &model.Strategy{
+        Id:          123,
+        Name:        "test-policy",
+        PolicyType:  1,
+        Description: "Test policy",
+    }
+    
+    // 设置 Mock - 模拟数据库返回有效策略
+    patches := gomonkey.ApplyMethod(
+        daoInstance,
+        "GetStrategyById",
+        func(_ *dao.StrategyDAO, ctx context.Context, id uint64) (*model.Strategy, error) {
+            return expectedPolicy, nil
+        },
+    )
+    defer patches.Reset()
+
+    // 执行被测函数
+    request := &GetPolicyRequest{PolicyId: 123}
+    got, err := policyService.GetPolicy(request)
+
+    // 验证结果
+    assert.NoError(t, err)
+    assert.Equal(t, expectedPolicy.Id, got.Policy.Id)
+    assert.Equal(t, expectedPolicy.Name, got.Policy.Name)
+}
+
+// 测试场景：传入无效策略ID时应返回错误
+func TestPolicyService_GetPolicy_InvalidPolicyID_ShouldReturnError(t *testing.T) {
+    // 设置 Mock - 模拟数据库返回未找到错误
+    patches := gomonkey.ApplyMethod(
+        daoInstance,
+        "GetStrategyById",
+        func(_ *dao.StrategyDAO, ctx context.Context, id uint64) (*model.Strategy, error) {
+            return nil, errors.New("策略不存在")
+        },
+    )
+    defer patches.Reset()
+
+    // 执行被测函数
+    request := &GetPolicyRequest{PolicyId: 999}
+    got, err := policyService.GetPolicy(request)
+
+    // 验证结果
+    assert.Error(t, err)
+    assert.Nil(t, got)
+    assert.Contains(t, err.Error(), "策略不存在")
+}
+```
+
+#### 表驱动测试模式（特殊情况使用）
+当多个测试用例具有相似的测试逻辑时，可以考虑使用表驱动测试：
+
+```go
+func TestValidateInput_MultipleScenarios(t *testing.T) {
+    tests := []struct {
+        name        string
+        description string  // 测试场景描述
+        input       string
+        wantErr     bool
+        expectedMsg string
+    }{
+        {
+            name:        "empty_input",
+            description: "测试空输入时应返回参数错误",
+            input:       "",
+            wantErr:     true,
+            expectedMsg: "输入不能为空",
+        },
+        {
+            name:        "valid_input",
+            description: "测试有效输入时应通过验证",
+            input:       "valid-input",
+            wantErr:     false,
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            // 测试场景：{tt.description}
+            err := ValidateInput(tt.input)
+            
+            if tt.wantErr {
+                assert.Error(t, err)
+                if tt.expectedMsg != "" {
+                    assert.Contains(t, err.Error(), tt.expectedMsg)
+                }
+            } else {
+                assert.NoError(t, err)
+            }
+        })
+    }
+}
+```
+
+### Mock 使用规范
+
+> 📝 **gomonkey 使用说明**: `gomonkey.ApplyMethod` 的第一个参数可以是实例或类型，请根据项目实际情况选择合适的方式。如果使用类型，可以使用 `reflect.TypeOf((*YourType)(nil)).Elem()` 方式。
+
+#### 使用 gomonkey 进行函数替换
+```go
+func TestPolicyService_GetPolicy_DBError_ShouldReturnError(t *testing.T) {
+    // 测试场景：数据库查询异常时应返回数据库错误
+    // 前置条件：模拟数据库连接失败或查询异常
+    // 预期结果：返回包含数据库错误信息的错误
+    
+    // 设置 Mock - 模拟数据库查询异常
+    patches := gomonkey.ApplyMethod(
+        daoInstance,
+        "GetStrategyById",
+        func(_ *dao.StrategyDAO, ctx context.Context, id uint64) (*model.Strategy, error) {
+            return nil, errors.New("database connection failed")
+        },
+    )
+    defer patches.Reset()
+
+    // 执行被测函数
+    request := &GetPolicyRequest{PolicyId: 123}
+    got, err := policyService.GetPolicy(request)
+
+    // 验证结果
+    assert.Error(t, err)
+    assert.Nil(t, got)
+    assert.Contains(t, err.Error(), "database")
+}
+```
+
+#### Mock 全局变量
+```go
+func TestQuotaService_UpdateQuota_WithCache_ShouldUpdateSuccessfully(t *testing.T) {
+    // 测试场景：启用缓存时更新配额应同时更新数据库和缓存
+    // 前置条件：Redis 缓存服务正常运行
+    // 预期结果：数据库和缓存都被正确更新
+    
+    // 设置 Mock - 模拟 Redis 客户端
+    mockRedisClient := &MockRedisClient{}
+    patches := gomonkey.ApplyGlobalVar(&redisClient, mockRedisClient)
+    defer patches.Reset()
+
+    // 执行测试逻辑...
+}
+```
+
+## 测试数据管理
+
+### 测试数据准备
+- 使用测试专用的数据库实例
+- 在 `setup` 和 `teardown` 中管理测试数据
+- 使用工厂模式创建测试对象
+
+### 测试数据示例
+```go
+// 创建测试策略
+func createTestPolicy(t *testing.T) *model.Strategy {
+    return &model.Strategy{
+        Id:          123,
+        Name:        "test-policy",
+        PolicyType:  1,
+        Description: "Test policy for unit testing",
+        // 设置其他必要字段...
+    }
+}
+```
+
+## 注意事项
+
+1. **独立性**: 每个测试应该独立运行，不依赖其他测试的执行顺序
+2. **清理**: 使用 `defer` 确保测试后的清理工作
+3. **并发安全**: 避免测试之间的并发问题
+4. **错误处理**: 正确处理和验证错误情况
+5. **日志**: 测试中避免输出过多日志，使用 `t.Logf` 代替 `fmt.Printf`
+
+## 测试验证和运行
+
+**重要**：每次生成单元测试文件后，必须运行测试验证生成的测试文件并显示详细信息。
+
+### 验证步骤
+
+使用以下命令验证生成的测试文件：
+
+```bash
+# 运行测试并显示详细信息（禁用内联优化以支持 gomonkey）
+go test -gcflags=all=-l -v ./path/to/your/package
+```
+
+示例：
+```bash
+# 验证 policy 包的测试
+go test -gcflags=all=-l -v ./service/policy
+```
+
+> **重要说明**: 由于使用 gomonkey 进行 Mock，必须添加 `-gcflags=all=-l` 参数禁用内联优化，否则 gomonkey 无法正常工作。
+
+## AI 测试生成指导原则
+
+> **本章节说明**: 本章节为执行流程指引，遵循前文"测试用例生成策略"的规范要求。
+
+### 给 AI 的重要指导
+
+**默认生成策略**：
+- **质量第一**: 优先保证生成的测试能够编译通过并正确执行
+- **全面覆盖**: 生成全面的测试用例，包括正常流程、边界情况和异常处理
+- **场景丰富**: 根据函数特性和业务逻辑生成多种测试场景
+
+### 安全的测试生成流程
+
+为了避免破坏原有的测试文件，必须遵循以下安全流程：
+
+**新文件生成模式**：
+1. **创建临时测试文件**: 在新的临时 Go 文件中生成测试用例（如 `policy_test_new.go`）
+2. **完成所有验证步骤**: 在临时文件中完成编译、测试运行等所有验证
+3. **确认测试通过**: 只有当所有测试都成功运行后，才进行合并操作
+4. **安全合并**: 将验证通过的测试代码合并到原测试文件中
+5. **清理临时文件**: 合并完成后删除临时文件
+
+**详细执行步骤**：
+
+**第1步：创建临时测试文件**
+```bash
+# 示例：为 policy.go 创建临时测试文件
+touch ./service/policy/policy_test_new.go
+```
+
+**第2步：生成测试用例**
+- 在临时文件中生成完整的包声明、导入和测试函数
+- 确保包名与原文件一致
+- 包含必要的import语句
+
+**第3步：验证测试**
+```bash
+# 只运行新生成的测试函数（禁用内联优化以支持 gomonkey）
+go test -gcflags=all=-l -v ./service/policy -run TestPolicyService_GetPolicy_ValidPolicyID_ShouldReturnPolicy
+
+# 或者运行整个包的测试（包括新测试）
+go test -gcflags=all=-l -v ./service/policy
+```
+
+**第4步：修复问题（如有）**
+- 如果测试失败，只在临时文件中修复
+- 重复第3步验证，直到测试通过
+
+**第5步：安全合并**
+- 将验证通过的测试函数复制到原测试文件
+- 确保不破坏原文件的其他内容
+
+**第6步：最终验证**
+```bash
+# 验证合并后的测试文件（禁用内联优化以支持 gomonkey）
+go test -gcflags=all=-l -v ./service/policy
+```
+
+**第7步：清理**
+```bash
+# 删除临时文件
+rm ./service/policy/policy_test_new.go
+```
+
+### 重要安全提醒
+
+1. **绝对不允许直接修改原测试文件**: 始终在临时文件中工作，直到测试完全通过
+2. **合并时保持谨慎**: 只复制测试函数，不要修改原文件的其他部分
+3. **验证合并结果**: 合并后必须再次运行测试确保没有问题
+4. **保留备份**: 如果原测试文件很重要，建议在修改前备份
+
+### 最佳实践
+
+1. **一次只生成一个测试函数**: 降低复杂性，提高成功率
+2. **使用清晰的命名**: 临时文件名应该清晰表明其用途
+3. **及时清理**: 不要留下临时文件，避免混乱
+4. **逐步扩展**: 先生成核心功能的测试，再逐步添加边界情况和异常处理测试
+
+**示例场景**：
+如果用户说"为 GetPolicy 函数生成测试"，则：
+- **应该做**: 生成全面的测试用例，包括：
+  - 正常流程：有效PolicyID返回策略
+  - 异常情况：无效ID、策略不存在
+  - 边界测试：参数为空、超出范围等
+  - 系统异常：数据库错误、网络异常等
+- **质量保证**: 每个测试用例都应该能够正确运行并验证相应场景
+
+## 项目特定的测试注意事项
+
+1. **数据库操作**: 使用 gomonkey Mock DAO 层的方法，不连接真实数据库
+2. **Redis 操作**: Mock Redis 客户端，避免真实的缓存操作
+3. **日志输出**: 在测试中可以忽略或 Mock 日志输出
+4. **配置管理**: 使用测试专用配置，避免依赖外部配置文件
+5. **测试运行**: 生成测试文件后必须使用 `go test -gcflags=all=-l -v` 命令验证，禁用内联优化以支持 gomonkey
+6. **gomonkey 要求**: 所有使用 gomonkey 的测试都必须在命令中添加 `-gcflags=all=-l` 参数

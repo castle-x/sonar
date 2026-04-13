@@ -1,0 +1,33 @@
+# sonar-tap 端到端测试配置
+step: 3
+
+sonar_store:
+  app_id: "e2e_test"
+  enabled: false
+  host: "http://localhost:8082"
+  req_timeout: 5
+  report_interval: 10
+  buf_size: 1000
+  print_metrics: true
+  labels:
+    cluster: "test"
+  channel_size: 4096
+
+node_exporter:
+  enabled: true
+  labels:
+    env: "e2e_test"
+
+process_exporter:
+  enabled: true
+  dynamic_interval: 5
+  rules:
+    - name: ""
+      cmdlines: ["--config", "test", "--id=server001"]
+      extracts:
+        - type: regex
+          pattern: "--id=(\\w+)"
+          labels:
+            server_id: "$1"
+
+log_config: []

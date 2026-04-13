@@ -1,0 +1,321 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/inter";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================
+   Base styles
+   ============================================ */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    font-family: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    @apply bg-background text-foreground;
+  }
+
+  html {
+    font-size: 100%;
+  }
+}
+
+/* ============================================
+   Tailwind v4 theme — Two-Layer OKLCH
+   ============================================ */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --font-headline:
+    "Manrope Variable", "Manrope", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-body: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-nav-active: var(--sidebar-nav-active);
+  --header-height: 3.5rem;
+}
+
+/* ============================================
+   Light theme — Two-Layer Color Architecture
+   ═══════════════════════════════════════════
+
+   Layer 1: Primitive Core Tokens (~11 独立色值)
+   ─────────────────────────────────────────────
+   单一真值源，改 1 处 → 所有引用自动同步
+   命名规则：按用途/层级命名，不按组件命名
+
+   Layer 2: shadcn Compatibility Aliases
+   ─────────────────────────────────────────────
+   所有 shadcn/ui 组件源码消费的变量名保持不变，
+   值全部通过 var(--primitive) 引用核心色。
+   ============================================ */
+:root {
+  /* ── Layer 1: Primitive Core Tokens ────────────────────── */
+  --surface-base: oklch(0.9753 0.004 106.47); /* 暖白 — 页面/卡片/弹出层底色 */
+  --surface-sidebar: oklch(0.9515 0.0067 97.35); /* 暖灰 — 侧栏底色 */
+  --text-primary: oklch(0.2631 0.0127 100.51); /* 近黑暖调 — 主文本 */
+  --text-secondary: oklch(0.556 0 0); /* 暗灰 — 副文本/placeholder/描述 */
+  --interactive-hover: oklch(
+    0.93 0 0
+  ); /* 浅灰 — 悬停/选中行/次要背景 */
+  --interactive-fg: oklch(0.205 0 0); /* 深黑 — 悬停/选中/次要前景 */
+  --border-default: oklch(0.922 0 0); /* 浅灰 — 边框/分隔线 */
+  --focus-ring: oklch(0.708 0 0); /* 中灰 — 焦点环 */
+  --brand: oklch(0.205 0 0); /* 深黑 — 品牌/主操作色 */
+  --brand-fg: oklch(0.985 0 0); /* 近白 — 品牌前景 */
+  --danger: oklch(0.577 0.245 27.325); /* 红色 — 危险操作 */
+
+  /* ── Layer 2: shadcn Compatibility Aliases ─────────────── */
+  /* 表面色 */
+  --background: var(--surface-base);
+  --foreground: var(--text-primary);
+  --card: var(--surface-base);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface-base);
+  --popover-foreground: var(--text-primary);
+
+  /* 品牌/主操作 */
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-fg);
+
+  /* 交互态（secondary = muted = accent，CSS 层统一） */
+  --secondary: var(--interactive-hover);
+  --secondary-foreground: var(--interactive-fg);
+  --muted: var(--interactive-hover);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--interactive-hover);
+  --accent-foreground: var(--interactive-fg);
+
+  /* 危险 */
+  --destructive: var(--danger);
+
+  /* 边框 & 焦点 */
+  --border: var(--border-default);
+  --input: var(--border-default);
+  --ring: var(--focus-ring);
+
+  /* 图表色（独立，不参与两层映射） */
+  --chart-1: oklch(0.809 0.105 251.813);
+  --chart-2: oklch(0.623 0.214 259.815);
+  --chart-3: oklch(0.546 0.245 262.881);
+  --chart-4: oklch(0.488 0.243 264.376);
+  --chart-5: oklch(0.424 0.199 265.638);
+
+  /* 圆角基准 */
+  --radius: 0.625rem;
+
+  /* 侧栏别名 */
+  --sidebar: var(--surface-sidebar);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: var(--brand-fg);
+  --sidebar-accent: var(--interactive-hover);
+  --sidebar-accent-foreground: var(--interactive-fg);
+  --sidebar-border: var(--border-default);
+  --sidebar-ring: var(--focus-ring);
+  --sidebar-nav-active: var(--brand);
+}
+
+/* ============================================
+   Dark theme — Two-Layer Color Architecture
+   ============================================ */
+.dark {
+  /* ── Layer 1: Primitive Core Tokens ────────────────────── */
+  --surface-base: oklch(0.1821 0.0139 94.03); /* 深暖灰 — 页面/弹出层底色 */
+  --surface-raised: oklch(0.205 0 0); /* 更深灰 — 卡片底色(比 base 稍亮) */
+  --surface-sidebar: oklch(0.2135 0.0118 91.77); /* 深暖灰 — 侧栏底色 */
+  --text-primary: oklch(0.985 0 0); /* 近白 — 主文本 */
+  --text-secondary: oklch(0.708 0 0); /* 中灰 — 副文本/placeholder */
+  --interactive-hover: oklch(0.269 0 0); /* 深灰 — 悬停/选中行/次要背景 */
+  --interactive-fg: oklch(0.985 0 0); /* 近白 — 悬停/选中/次要前景 */
+  --border-default: oklch(1 0 0 / 10%); /* 白 10% — 边框(透明度方案) */
+  --border-input: oklch(1 0 0 / 15%); /* 白 15% — 输入框边框(比通用边框稍亮) */
+  --focus-ring: oklch(0.556 0 0); /* 暗灰 — 焦点环 */
+  --brand: oklch(0.922 0 0); /* 浅灰 — 品牌/主操作色(暗色下反转) */
+  --brand-fg: oklch(0.205 0 0); /* 更深灰 — 品牌前景 */
+  --danger: oklch(0.704 0.191 22.216); /* 亮红 — 危险操作(暗色下提亮) */
+
+  /* ── Layer 2: shadcn Compatibility Aliases ─────────────── */
+  /* 表面色 */
+  --background: var(--surface-base);
+  --foreground: var(--text-primary);
+  --card: var(--surface-raised);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface-base);
+  --popover-foreground: var(--text-primary);
+
+  /* 品牌/主操作 */
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-fg);
+
+  /* 交互态 */
+  --secondary: var(--interactive-hover);
+  --secondary-foreground: var(--interactive-fg);
+  --muted: var(--interactive-hover);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--interactive-hover);
+  --accent-foreground: var(--interactive-fg);
+
+  /* 危险 */
+  --destructive: var(--danger);
+
+  /* 边框 & 焦点 */
+  --border: var(--border-default);
+  --input: var(--border-input);
+  --ring: var(--focus-ring);
+
+  /* 图表色（与 Light 共用） */
+  --chart-1: oklch(0.809 0.105 251.813);
+  --chart-2: oklch(0.623 0.214 259.815);
+  --chart-3: oklch(0.546 0.245 262.881);
+  --chart-4: oklch(0.488 0.243 264.376);
+  --chart-5: oklch(0.424 0.199 265.638);
+
+  /* 侧栏别名 */
+  --sidebar: var(--surface-sidebar);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: var(--brand-fg);
+  --sidebar-accent: var(--interactive-hover);
+  --sidebar-accent-foreground: var(--interactive-fg);
+  --sidebar-border: var(--border-default);
+  --sidebar-ring: var(--focus-ring);
+  --sidebar-nav-active: var(--brand);
+}
+
+/* ============================================
+   Accent theme: Emerald — Light
+   草绿品牌色，只覆盖品牌/图表/侧栏选中
+   表面色/交互态/文本/边框全部继承 Neutral
+   ============================================ */
+[data-accent="emerald"] {
+  --brand: oklch(0.727 0.173 133);
+  --brand-fg: oklch(0.16 0 0);
+
+  --chart-1: oklch(0.864 0.145 132);
+  --chart-2: oklch(0.727 0.173 133);
+  --chart-3: oklch(0.62 0.15 133);
+  --chart-4: oklch(0.52 0.12 134);
+  --chart-5: oklch(0.44 0.1 134);
+
+  --sidebar-nav-active: oklch(0.727 0.173 133);
+}
+
+/* ============================================
+   Accent theme: Emerald — Dark
+   ============================================ */
+.dark[data-accent="emerald"],
+.dark [data-accent="emerald"] {
+  --brand: oklch(0.864 0.145 132);
+  --brand-fg: oklch(0.16 0 0);
+
+  --focus-ring: oklch(0.727 0.173 133);
+
+  --chart-1: oklch(0.864 0.145 132);
+  --chart-2: oklch(0.727 0.173 133);
+  --chart-3: oklch(0.62 0.15 133);
+  --chart-4: oklch(0.52 0.12 134);
+  --chart-5: oklch(0.44 0.1 134);
+
+  --sidebar-nav-active: oklch(0.864 0.145 132);
+  --sidebar-ring: oklch(0.727 0.173 133);
+}
+
+/* ============================================
+   Accent theme: Sapphire — Light
+   低饱和蓝品牌色，只覆盖品牌/图表/侧栏选中
+   ============================================ */
+[data-accent="sapphire"] {
+  --brand: oklch(0.546 0.153 259);
+  --brand-fg: oklch(1 0 0);
+
+  --chart-1: oklch(0.78 0.1 255);
+  --chart-2: oklch(0.65 0.13 258);
+  --chart-3: oklch(0.55 0.15 260);
+  --chart-4: oklch(0.45 0.14 262);
+  --chart-5: oklch(0.38 0.12 264);
+
+  --sidebar-nav-active: oklch(0.546 0.153 259);
+}
+
+/* ============================================
+   Accent theme: Sapphire — Dark
+   ============================================ */
+.dark[data-accent="sapphire"],
+.dark [data-accent="sapphire"] {
+  --brand: oklch(0.7 0.12 258);
+  --brand-fg: oklch(0.16 0 0);
+
+  --focus-ring: oklch(0.546 0.153 259);
+
+  --chart-1: oklch(0.78 0.1 255);
+  --chart-2: oklch(0.65 0.13 258);
+  --chart-3: oklch(0.55 0.15 260);
+  --chart-4: oklch(0.45 0.14 262);
+  --chart-5: oklch(0.38 0.12 264);
+
+  --sidebar-primary: oklch(0.65 0.13 258);
+  --sidebar-nav-active: oklch(0.7 0.12 258);
+  --sidebar-ring: oklch(0.546 0.153 259);
+}
+
+/* ============================================
+   Scrollbar styling
+   ============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(from var(--foreground) l c h / 15%);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(from var(--foreground) l c h / 25%);
+}

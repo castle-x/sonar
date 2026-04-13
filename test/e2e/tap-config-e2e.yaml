@@ -1,0 +1,97 @@
+step: 3
+sonar_store:
+    app_id: sonar-tap-e2e-test
+    enabled: true
+    host: http://localhost:8082
+    req_timeout: 5
+    report_interval: 5
+    buf_size: 1000
+    print_metrics: true
+    labels:
+        env: e2e-test
+    channel_size: 4096
+process_exporter:
+    enabled: true
+    dynamic_interval: 5
+    rules:
+        - pid: 0
+          name: mock_gameserver
+          cmdlines:
+            - --id=server001
+          log_path_pattern: -ABSLOG=(.+)
+          extracts:
+            - type: regex
+              sep: ""
+              pattern: --id=(\w+)
+              labels:
+                server_id: $1
+node_exporter:
+    enabled: true
+    labels:
+        env: e2e-test
+log_config:
+    - name: GameServerLog
+      file_path: ""
+      rules:
+        - pid: 0
+          name: mock_gameserver
+          cmdlines:
+            - --id=server001
+          log_path_pattern: -ABSLOG=(.+)
+          extracts: []
+      dynamic_interval: 5
+      encoding: ""
+      enabled: true
+      read_mode: tail
+      max_file_size_mb: 0
+      time_zone: ""
+      watch:
+        poll_interval: 1s
+        use_inotify: false
+        rotate_check_interval: 5s
+        max_retries: 3
+      metrics:
+        - name: avg_fps
+          help: "Average FPS of game server"
+          pattern: AverageFps:(\d+)
+          enabled: true
+          density: 0
+          timestamp: ""
+          timestamp_format: ""
+          time_zone: ""
+          value: $1
+          labels: {}
+          is_record_minute_count: false
+        - name: active_users
+          help: "Active users count"
+          pattern: ActiveUsers:(\d+)
+          enabled: true
+          density: 0
+          timestamp: ""
+          timestamp_format: ""
+          time_zone: ""
+          value: $1
+          labels: {}
+          is_record_minute_count: false
+        - name: latency_ms
+          help: "Server latency in ms"
+          pattern: Latency:(\d+)ms
+          enabled: true
+          density: 0
+          timestamp: ""
+          timestamp_format: ""
+          time_zone: ""
+          value: $1
+          labels: {}
+          is_record_minute_count: false
+        - name: error_count
+          help: "Error log count per minute"
+          pattern: ERROR (.+)
+          enabled: true
+          density: 0
+          timestamp: ""
+          timestamp_format: ""
+          time_zone: ""
+          value: ""
+          labels: {}
+          is_record_minute_count: true

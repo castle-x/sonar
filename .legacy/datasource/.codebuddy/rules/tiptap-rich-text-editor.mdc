@@ -1,0 +1,153 @@
+---
+description: 
+alwaysApply: false
+enabled: true
+updatedAt: 2026-02-02T04:02:37.287Z
+provider: 
+---
+
+# Tiptap 富文本编辑器组件 Skill
+
+## 使用场景
+- 需要创建功能完整的富文本编辑器
+- 需要支持 Markdown 粘贴自动转换
+- 需要支持表格、代码块、列表等复杂格式
+- 需要编辑和只读两种模式
+
+## 技术栈
+- React + TypeScript
+- Tiptap 编辑器框架
+- Tailwind CSS 样式
+- shadcn/ui 组件库
+- lucide-react 图标
+
+## 核心依赖
+
+```bash
+npm install @tiptap/react @tiptap/starter-kit @tiptap/pm \
+  @tiptap/extension-underline \
+  @tiptap/extension-task-list @tiptap/extension-task-item \
+  @tiptap/extension-placeholder \
+  @tiptap/extension-code-block-lowlight \
+  @tiptap/extension-text-style @tiptap/extension-color \
+  @tiptap/extension-highlight \
+  @tiptap/extension-table @tiptap/extension-table-row \
+  @tiptap/extension-table-cell @tiptap/extension-table-header \
+  @tiptap/extension-link \
+  lowlight marked
+```
+
+## 组件接口
+
+```typescript
+interface RichTextEditorProps {
+  content?: string           // HTML 内容
+  readonly?: boolean         // 只读模式
+  onChange?: (html: string) => void  // 内容变化回调
+  className?: string         // 自定义类名
+  placeholder?: string       // 占位符
+}
+
+// 编辑器组件
+export function RichTextEditor(props: RichTextEditorProps)
+
+// 只读查看器
+export function RichTextViewer({ content, className })
+```
+
+## 功能列表
+
+### 文本格式
+- 标题 H1/H2/H3
+- 加粗、斜体、下划线、删除线
+- 文字颜色（9 种预设）
+- 背景高亮（8 种颜色）
+- 字体大小（6 档）
+
+### 结构元素
+- 无序列表（蓝色圆点）
+- 有序列表（多级：1 → a → i）
+- 待办事项
+- 引用块（彩色边框）
+- 分隔线
+
+### 代码
+- 行内代码
+- 代码块（带行号 + 语法高亮）
+
+### 链接与表格
+- 超链接
+- 表格（插入、调整列宽、右键增删行列）
+
+### 高级特性
+- Markdown 粘贴自动转换
+- 浮动工具栏（选中文本时显示）
+- 完整快捷键支持
+
+## 使用示例
+
+```tsx
+import { RichTextEditor, RichTextViewer } from '@/components/ui/rich-text-editor'
+
+// 编辑模式
+function Editor() {
+  const [content, setContent] = useState('')
+  return (
+    <RichTextEditor
+      content={content}
+      onChange={setContent}
+      placeholder="请输入内容..."
+    />
+  )
+}
+
+// 只读渲染
+function Viewer({ html }) {
+  return <RichTextViewer content={html} />
+}
+```
+
+## CSS 样式要点
+
+添加以下关键样式类到全局 CSS：
+
+```css
+.rich-text-content { line-height: 1.75; }
+.rich-text-content h1 { font-size: 1.625rem; }
+.rich-text-content h2 { font-size: 1.25rem; }
+.rich-text-content h3 { font-size: 1.0625rem; }
+
+/* 无序列表蓝色圆点 */
+.rich-text-content ul > li::before {
+  content: "•"; color: #3370ff;
+}
+
+/* 代码块行号 */
+.code-block-with-lines { display: flex; }
+.line-numbers { user-select: none; }
+
+/* 引用块 */
+.rich-text-content blockquote {
+  border-left: 3px solid #3370ff;
+}
+```
+
+## 参考文件
+
+详细实现请参考项目中的：
+- 组件：`site/src/components/ui/rich-text-editor.tsx`
+- 样式：`site/src/index.css`（搜索 `.rich-text-content`）
+- 使用示例：
+  - `site/src/components/report-detail/description-card.tsx`
+  - `site/src/components/task-detail/task-description-card.tsx`
+
+## 快捷键
+
+| 功能 | Mac | Windows |
+|------|-----|---------|
+| 加粗 | ⌘B | Ctrl+B |
+| 斜体 | ⌘I | Ctrl+I |
+| 下划线 | ⌘U | Ctrl+U |
+| 代码块 | ⌘⌥C | Ctrl+Alt+C |
+| 无序列表 | ⌘⇧8 | Ctrl+Shift+8 |
+| 有序列表 | ⌘⇧7 | Ctrl+Shift+7 |

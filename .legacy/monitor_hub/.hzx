@@ -1,0 +1,208 @@
+api_dir: apis
+api_list:
+    - api: monitor_hub/datasource/v1
+      method: POST
+      name: CreateDatasource
+      path: /apis/v1/datasource/create
+      request: CreateDatasourceRequest
+      response: base.Response
+    - api: monitor_hub/datasource/v1
+      method: POST
+      name: UpdateDatasource
+      path: /apis/v1/datasource/update
+      request: UpdateDatasourceRequest
+      response: base.Response
+    - api: monitor_hub/datasource/v1
+      method: POST
+      name: GetDatasource
+      path: /apis/v1/datasource/get
+      request: base.IdRequest
+      response: base.Response
+    - api: monitor_hub/datasource/v1
+      method: POST
+      name: ListDatasource
+      path: /apis/v1/datasource/list
+      request: base.QueryRequest
+      response: base.Response
+    - api: monitor_hub/datasource/v1
+      method: POST
+      name: DeleteDatasource
+      path: /apis/v1/datasource/del
+      request: base.IdRequest
+      response: base.Response
+    - api: monitor_hub/datasource/v1
+      method: POST
+      name: UploadIcon
+      path: /apis/v1/datasource/icon/upload
+      request: UploadIconRequest
+      response: base.Response
+    - api: monitor_hub/filetree/v1
+      method: GET
+      name: GetFileTree
+      path: /apis/v1/filetree/get
+      request: GetFileTreeRequest
+      response: base.Response
+    - api: monitor_hub/filetree/v1
+      method: GET
+      name: DownloadFile
+      path: /apis/v1/filetree/download
+      request: DownloadFileRequest
+      response: base.Response
+    - api: monitor_hub/filetree/v1
+      method: GET
+      name: GetFileStats
+      path: /apis/v1/filetree/stats
+      request: GetFileTreeRequest
+      response: base.Response
+    - api: monitor_hub/filetree/v1
+      method: POST
+      name: GetFilesByPaths
+      path: /apis/v1/filetree/batch
+      request: GetFilesByPathsRequest
+      response: base.Response
+    - api: monitor_hub/filetree/v1
+      method: POST
+      name: UploadFile
+      path: /apis/v1/filetree/upload
+      request: UploadFileRequest
+      response: base.Response
+    - api: monitor_hub/filetree/v1
+      method: POST
+      name: DeleteFile
+      path: /apis/v1/filetree/delete
+      request: DeleteFileRequest
+      response: base.Response
+    - api: monitor_hub/filetree/v1
+      method: POST
+      name: CreateDir
+      path: /apis/v1/filetree/mkdir
+      request: CreateDirRequest
+      response: base.Response
+    - api: monitor_hub/points/v1
+      method: POST
+      name: QueryPoints
+      path: /apis/v1/points/query
+      request: QueryPointsRequest
+      response: base.Response
+    - api: monitor_hub/report/v1
+      method: POST
+      name: CreateReport
+      path: /apis/v1/report/create
+      request: Report
+      response: base.Response
+    - api: monitor_hub/report/v1
+      method: POST
+      name: GetReportTask
+      path: /apis/v1/report/task/get
+      request: base.IdRequest
+      response: base.Response
+    - api: monitor_hub/report/v1
+      method: POST
+      name: GetReport
+      path: /apis/v1/report/get
+      request: base.IdRequest
+      response: base.Response
+    - api: monitor_hub/report/v1
+      method: POST
+      name: GetChunk
+      path: /apis/v1/chunk/get
+      request: base.IdRequest
+      response: base.Response
+    - api: monitor_hub/report/v1
+      method: POST
+      name: GetReportChunkList
+      path: /apis/v1/report/chunk/list
+      request: base.IdRequest
+      response: base.Response
+    - api: monitor_hub/report/v1
+      method: POST
+      name: ListReport
+      path: /apis/v1/report/list
+      request: base.QueryRequest
+      response: base.Response
+    - api: monitor_hub/report/v1
+      method: POST
+      name: DeleteReport
+      path: /apis/v1/report/del
+      request: base.IdRequest
+      response: base.Response
+    - api: monitor_hub/report/v1
+      method: POST
+      name: UpdateReport
+      path: /apis/v1/report/update
+      request: Report
+      response: base.Response
+    - api: monitor_hub/report/v1
+      method: POST
+      name: UploadIcon
+      path: /apis/v1/report/icon/upload
+      request: UploadIconRequest
+      response: base.Response
+    - api: monitor_hub/report/v1
+      method: POST
+      name: CalculateReportScore
+      path: /apis/v1/report/score/calculate
+      request: base.IdRequest
+      response: base.Response
+    - api: monitor_hub/report/v1
+      method: POST
+      name: ReloadReport
+      path: /apis/v1/report/reload
+      request: base.IdRequest
+      response: base.Response
+    - api: monitor_hub/report/v1
+      method: POST
+      name: ForwardReport
+      path: /apis/v1/report/forward
+      request: ForwardReportRequest
+      response: base.Response
+    - api: monitor_hub/report/v1
+      method: POST
+      name: ImportReport
+      path: /apis/v1/report/import
+      request: ImportReportRequest
+      response: base.Response
+    - api: monitor_hub/task/v1
+      method: POST
+      name: CreateTask
+      path: /apis/v1/task/create
+      request: CreateTaskRequest
+      response: base.Response
+    - api: monitor_hub/task/v1
+      method: POST
+      name: GetTask
+      path: /apis/v1/task/get
+      request: base.IdRequest
+      response: base.Response
+    - api: monitor_hub/task/v1
+      method: POST
+      name: ListTask
+      path: /apis/v1/task/list
+      request: base.QueryRequest
+      response: base.Response
+    - api: monitor_hub/task/v1
+      method: POST
+      name: UpdateTask
+      path: /apis/v1/task/update
+      request: UpdateTaskRequest
+      response: base.Response
+    - api: monitor_hub/task/v1
+      method: POST
+      name: DeleteTask
+      path: /apis/v1/task/del
+      request: base.IdRequest
+      response: base.Response
+    - api: monitor_hub/task/v1
+      method: POST
+      name: UploadIcon
+      path: /apis/v1/task/icon/upload
+      request: UploadIconRequest
+      response: base.Response
+    - api: monitor_hub/task/v1
+      method: POST
+      name: ForwardTask
+      path: /apis/v1/task/forward
+      request: ForwardTaskRequest
+      response: base.Response
+app_name: monitor_hub
+version: 0.0.2

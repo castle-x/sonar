@@ -1,0 +1,14 @@
+{"level":"info","ts":1776086218.8142478,"caller":"server/main.go:42","msg":"starting sonar-store","addr":":8082"}
+{"level":"info","ts":1776086218.8176188,"caller":"storage/prometheus.go:156","msg":"Prometheus storage initialized","dataDir":"./data","retentionDays":7}
+2026/04/13 21:16:58.817678 engine.go:669: [Debug] HERTZ: Method=GET    absolutePath=/health                   --> handlerName=sonar-store/internal/router.Register.func1 (num=2 handlers)
+2026/04/13 21:16:58.817791 engine.go:669: [Debug] HERTZ: Method=POST   absolutePath=/apis/v1/metrics/batch    --> handlerName=sonar-store/internal/handler/metrics.(*MetricsHandler).ReportMetrics-fm (num=2 handlers)
+2026/04/13 21:16:58.817801 engine.go:669: [Debug] HERTZ: Method=POST   absolutePath=/apis/v1/metrics/query    --> handlerName=sonar-store/internal/handler/metrics.(*MetricsHandler).QueryMetrics-fm (num=2 handlers)
+2026/04/13 21:16:58.817811 engine.go:669: [Debug] HERTZ: Method=POST   absolutePath=/apis/v1/metrics/query_stats --> handlerName=sonar-store/internal/handler/metrics.(*MetricsHandler).GetStats-fm (num=2 handlers)
+2026/04/13 21:16:58.817819 engine.go:669: [Debug] HERTZ: Method=GET    absolutePath=/apis/v1/taps             --> handlerName=sonar-store/internal/handler/tap.(*TapHandler).ListTaps-fm (num=2 handlers)
+2026/04/13 21:16:58.817826 engine.go:669: [Debug] HERTZ: Method=GET    absolutePath=/apis/v1/taps/stats       --> handlerName=sonar-store/internal/handler/tap.(*TapHandler).GetTapStats-fm (num=2 handlers)
+2026/04/13 21:16:58.817833 engine.go:669: [Debug] HERTZ: Method=GET    absolutePath=/apis/v1/taps/:id         --> handlerName=sonar-store/internal/handler/tap.(*TapHandler).GetTap-fm (num=2 handlers)
+2026/04/13 21:16:58.817874 engine.go:397: [Info] HERTZ: Using network library=netpoll
+2026/04/13 21:16:58.818148 transport.go:140: [Info] HERTZ: HTTP server listening on address=[::]:8082
+{"level":"info","ts":1776086228.996545,"caller":"server/main.go:97","msg":"shutting down sonar-store..."}
+{"level":"info","ts":1776086228.996638,"caller":"storage/prometheus.go:431","msg":"Closing Prometheus storage..."}
+{"level":"info","ts":1776086229.0132558,"caller":"storage/prometheus.go:443","msg":"Prometheus storage closed"}

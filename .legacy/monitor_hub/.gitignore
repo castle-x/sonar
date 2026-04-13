@@ -1,0 +1,12 @@
+.idea/
+bin/mongodb/*
+bin/metric_center/*
+# 忽略 .vscode 目录及其所有内容
+.vscode/
+generator.exe
+release/
+bin/*
+learn/*
+# Export test output
+pkg/export/tmp/
+.codebuddy/

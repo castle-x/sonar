@@ -1,0 +1,7 @@
+{
+  "tool_name": "mcp__playwright__browser_handle_dialog",
+  "tool_input_preview": "{\"accept\":true}",
+  "error": "### Error\nError: The tool \"browser_handle_dialog\" can only be used when there is related modal state present.\n### Page\n- Page URL: about:blank",
+  "timestamp": "2026-04-09T15:44:16.530Z",
+  "retry_count": 1
+}

@@ -1,0 +1,146 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2026-02-03T03:42:56.761Z
+provider: 
+---
+
+# HZX 脚手架工作流程
+
+## 项目架构
+
+本项目使用 **hzx 脚手架** 构建，代码生成和更新必须通过 hzx 命令完成。
+
+## 核心规则
+
+### 1. 禁止手动修改生成的代码
+
+以下文件由 hzx 自动生成，**禁止手动修改**：
+
+```
+❌ apis/**/*.go          # thrift 生成的 Go 代码（禁止修改！）
+❌ wire_gen.go           # wire 依赖注入生成的代码
+❌ config/v1/*.go        # config 生成的代码（除了手动维护的部分）
+```
+
+**注意**：本项目使用 **thrift** 协议，不使用 protobuf。
+
+### 2. 代码更新命令
+
+| 场景 | 命令 | 说明 |
+|------|------|------|
+| 修改了 thrift 文件 | `hzx update apis` | 重新生成 API 代码 |
+| 修改了 config 配置 | `hzx update config` | 重新生成配置代码 |
+| 新增了接口/Handler | `hzx update biz` | 生成新的业务代码骨架 |
+| 修改了依赖注入 | `hzx update wire` | 重新生成 wire 代码 |
+| 一键更新所有 | `hzx update` | 推荐：更新所有生成代码 |
+
+### 3. 标准工作流程
+
+#### 修改现有接口（只改数据结构）
+
+```bash
+# 1. 修改 thrift 文件
+vim apis/monitor_hub/report/v1/report.thrift
+
+# 2. 更新生成代码
+hzx update apis
+
+# 3. 验证编译
+go build ./...
+```
+
+#### 新增接口
+
+```bash
+# 1. 在 thrift 中定义新接口
+vim apis/monitor_hub/xxx/v1/xxx.thrift
+
+# 2. 更新所有生成代码（推荐）
+hzx update
+
+# 或者分步执行：
+# hzx update apis
+# hzx update biz
+# hzx update wire
+
+# 3. 实现新生成的 Handler
+vim biz/xxx/v1/handler.go
+
+# 4. 验证编译
+go build ./...
+```
+
+#### 修改配置结构
+
+```bash
+# 1. 修改配置模板
+vim config/config.tmpl
+
+# 2. 更新配置代码
+hzx update config
+
+# 3. 验证编译
+go build ./...
+```
+
+## 常见错误
+
+### ❌ 错误做法
+
+```go
+// 直接修改生成的文件（禁止！）
+// apis/monitor_hub/report/v1/report.go
+type Report struct {
+    Name string `json:"name"`
+    // 手动添加字段（错误！下次 hzx update 会被覆盖）
+    NewField string `json:"new_field"`
+}
+```
+
+### ✅ 正确做法
+
+```thrift
+// 修改 thrift 源文件
+// apis/monitor_hub/report/v1/report.thrift
+struct Report {
+    1: required string name;
+    // 在这里添加新字段（正确！）
+    2: optional string new_field;
+}
+```
+
+然后执行：
+```bash
+hzx update apis
+```
+
+## 检查清单
+
+在提交代码前，确认：
+
+- [ ] 没有手动修改 `apis/**/*.go` 生成代码
+- [ ] 没有手动修改 `wire_gen.go` 文件
+- [ ] 修改 thrift 后执行了 `hzx update apis`
+- [ ] 新增接口后执行了 `hzx update biz` 和 `hzx update wire`
+- [ ] 代码编译通过 `go build ./...`
+
+## 快速参考
+
+```bash
+# 最常用：一键更新所有
+hzx update
+
+# 只更新 API 定义
+hzx update apis
+
+# 只更新业务代码骨架
+hzx update biz
+
+# 只更新依赖注入
+hzx update wire
+
+# 只更新配置
+hzx update config
+```

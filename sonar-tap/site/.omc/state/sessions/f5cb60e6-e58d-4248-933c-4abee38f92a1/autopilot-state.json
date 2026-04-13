@@ -1,0 +1,10 @@
+{
+  "active": true,
+  "started_at": "2026-04-09T15:34:44.873Z",
+  "original_prompt": "/autopilot 你真的是又臭又慢，这么个小改动被你改坏了，现在明显有语法错误了，在日志表单上。",
+  "session_id": "f5cb60e6-e58d-4248-933c-4abee38f92a1",
+  "project_path": "/Users/castlexu/github/sonar/sonar-tap/site",
+  "reinforcement_count": 0,
+  "awaiting_confirmation": true,
+  "last_checked_at": "2026-04-09T15:34:44.874Z"
+}

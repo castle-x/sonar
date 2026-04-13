@@ -1,0 +1,30 @@
+{
+  "user": {
+    "fallback": "用户",
+    "profile": "个人信息",
+    "logout": "退出登录"
+  },
+  "nav": {
+    "home": "Home",
+    "settings": "设置"
+  },
+  "pages": {
+    "home": {
+      "title": "首页",
+      "description": "欢迎使用 {{name}}，这是你的仪表盘首页。",
+      "sayHello": {
+        "title": "Say Hello API",
+        "description": "通过发送问候请求来测试 API 连接。",
+        "send": "发送",
+        "loading": "发送中...",
+        "placeholder": "输入你的名字"
+      }
+    },
+    "settings": {
+      "title": "设置",
+      "description": "应用设置功能即将推出。",
+      "comingSoon": "即将推出",
+      "comingSoonDescription": "设置功能正在开发中，敬请期待。"
+    }
+  }
+}

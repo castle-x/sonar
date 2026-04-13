@@ -1,0 +1,108 @@
+log_config:
+  - name: "PVProjectServerForProcessCmdline" # 从进程命令行参数获取日志路径，这种可以采样运行时的进程日志数据，并且能够将pid注入到label中，形成进场和日志数据的关联
+    enabled: true
+    encoding: "utf-8"
+    read_mode: "tail"
+    time_zone: "Asia/Shanghai"
+    dynamic_interval: 15                      # 动态刷新进程列表的间隔（秒），用于检测新增或退出的进程
+    rules:                                    # 进程匹配规则(参考node_process_exporter的配置)
+    - name: "PVProjectServer"                 # 进程名称
+      cmdlines: ["!seed"]          # 过滤进程的命令行参数，!代表反选
+      log_path_pattern: "-ABSLOG=(.+\\.log)"  # 从cmdlines中提取日志路径的正则表达式
+      extracts:        
+        - type: "regex"
+          pattern: "/Levels/([^/]+/[^\\s]+)"
+          labels:
+            type: $1 # 直接提取
+
+        - type: "regex"
+          pattern: "-max_players=(\\w+)"
+          labels:
+            max_players: $1 # 直接提取
+
+    metrics:
+      - name: "slow_fps"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Total slow FPS events detected"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogServerFPS: Warning: StatDurationFpsTick:ServerFPS TooLower Fps:(\\d+)"
+        value: "$2"
+        enabled: true
+        density: 0 # 采样密度，单位为秒，表示连续采样的数据点之间的时间间隔。例如，设置为15时，每15秒采集一个数据点，从而减少采样点的密集程度。
+        is_record_minute_count: true
+
+      - name: "avg_fps"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Average FPS"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogServerFPS: StatDurationFpsTick:ServerFPS AverageFps:(\\d+),CurrentTime"
+        value: "$2"
+        enabled: true
+        density: 0
+
+      - name: "online_player"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Online Player"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogDsRaptor: Display: UpdateServerInfo: msg = \\{scene_id: (\\d+) server_id: (\\d+) server_state: \\d+ server_load: (\\d+)\\}"
+        value: "$4"
+        enabled: true
+        density: 1
+
+      - name: "player_num"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Number of players in game"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogPVCheat: \\[ActorCount\\] Player Num (\\d+)"
+        value: "$2"
+        enabled: true
+        density: 1
+
+      - name: "npc_num"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Number of NPCs in game"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogPVCheat: \\[ActorCount\\].*?Npc Num (\\d+)"
+        value: "$2"
+        enabled: true
+        density: 1
+
+      - name: "trap_npc_num"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Number of trap NPCs in game"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogPVCheat: \\[ActorCount\\].*?TrapNpc Num (\\d+)"
+        value: "$2"
+        enabled: true
+        density: 1
+
+      - name: "drop_npc_num"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Number of drop NPCs in game"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogPVCheat: \\[ActorCount\\].*?DropNpc Num (\\d+)"
+        value: "$2"
+        enabled: true
+        density: 1
+
+      - name: "treasure_box_num"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Number of treasure boxes in game"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogPVCheat: \\[ActorCount\\].*?TreasureBox Num (\\d+)"
+        value: "$2"
+        enabled: true
+        density: 1
+
+push_gateway:
+  app_id: "vrm"       # 应用ID
+  enabled: true                         # 是否开启推送
+  host: "http://0.0.0.0:5000"         # 推送网关地址
+  req_timeout: 10                       # 请求超时时间（秒）
+  report_interval: 5 # 上报间隔（秒）
+  buf_size: 1000                        # 缓冲大小
+  print_metrics: true                  # 是否打印指标日志
+  channel_size: 10000                   # 通道大小
+  labels:                               # 全局标签
+    cluster: "load"
+    region: "shanghai"

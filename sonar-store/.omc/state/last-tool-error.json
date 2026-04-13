@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"ls -lah /Users/castlexu/github/sonar/sonar-store/ | grep -E \\\"(sonar-store|Makefile)\\\" && ls -lah /Users/castlexu/github/sonar/sonar-tap/ | grep -E \\\"(sonar-tap|Makefile)\\\"\"}",
+  "error": "Exit code 2\nrg: error parsing flag -E: grep config error: unknown encoding: (sonar-store|Makefile)",
+  "timestamp": "2026-04-13T13:08:03.885Z",
+  "retry_count": 2
+}

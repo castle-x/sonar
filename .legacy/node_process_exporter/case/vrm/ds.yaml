@@ -1,0 +1,42 @@
+# vrm监控配置备份 - load服
+# 全局配置
+step: 15  # 采集间隔（秒）
+
+# 推送网关配置
+push_gateway:
+  app_id: "vrm"       # 应用ID
+  enabled: true                # 是否开启推送
+  host: "http://0.0.0.0:5000"         # 推送网关地址
+  req_timeout: 10                       # 请求超时时间（秒）
+  report_interval: 10                   # 上报间隔（秒）
+  buf_size: 1000                        # 缓冲大小
+  print_metrics: true                   # 是否打印指标日志
+  channel_size: 10000                   # 通道大小
+  labels:                               # 全局标签
+    cluster: "joy_cvm_load_ds"
+    region: "shanghai"
+
+# 进程监控配置
+process_exporter:
+  enabled: true                         # 是否开启进程监控
+  dynamic_interval: 15                  # 动态刷新间隔（秒），0代表不开启
+  rules:                                # 进程匹配规则
+    - name: "PVProjectServer"           # 进程名称（用于标识）
+      cmdlines:                         # 过滤规则
+        - "!seed"                       # 不包含seed
+      extracts:
+        - type: "regex"
+          # 提取ds_type 
+          # /data/vrising/PVSvr_pack/DS/PVProject/Binaries/Linux/PVProjectServer  /Game/Assets/Environment/Levels/VRising/VRising_WP -dsa_url=0.0.0.0:11712 -server_ip=1.116.125.226 -alloc_by_dsc=true -nosteam -nothreading -server  -virtual -ds_request_timeout_ms="9000" -StubPid=647555 -CmdPipe="/tmp/cmdpipe-16460706052554014195.dsa-647555-2.pipe" -ResponsePipe="/tmp/rsppipe-16460706052554014195.dsa-647555-2.pipe" -port=12000 -start_token=_Ds14270698480132 -ABSLOG=/data/vrising/PVSvr_pack/log/vr_log/ds_log_of_dsa_1/ds.0-990804185-env_vrmdev-_Ds14270698480132-1760595636.log -PostForkThreading  VRMLoadDsraptor -max_players=24 -title_region_id=cnsh_4jjid_109_dev -ds_request_starttime_ms=1887184272
+          pattern: "/Levels/([^/]+/[^\\s]+)"
+          labels:
+            ds_type: $1 # 直接提取
+
+        - type: "regex"
+          pattern: "-max_players=(\\w+)"
+          labels:
+            max_players: $1 # 直接提取
+
+# 节点监控配置  
+node_exporter:
+  enabled: true                         # 是否开启节点监控

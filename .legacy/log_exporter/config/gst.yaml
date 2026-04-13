@@ -1,0 +1,252 @@
+log_config:
+  - name: "GangstarServerForProcessCmdline" # 从进程命令行参数获取日志路径，这种可以采样运行时的进程日志数据，并且能够将pid注入到label中，形成进场和日志数据的关联
+    enabled: true
+    encoding: "utf-8"
+    read_mode: "head"
+    time_zone: "Asia/Shanghai"
+    dynamic_interval: 15                      # 动态刷新进程列表的间隔（秒），用于检测新增或退出的进程
+    rules:                                    # 进程匹配规则(参考node_process_exporter的配置)
+    - name: "GangstarServer"                 # 进程名称
+      cmdlines: ["RobotServer","!ds_seed"]          # 过滤进程的命令行参数，!代表反选
+      log_path_pattern: "-ABSLOG=(.+\\.log)"  # 从cmdlines中提取日志路径的正则表达式
+      extracts:                               # 提取默认标签
+        - type: "regex"
+          pattern: "\\s-([^\\s=?]+)"
+          labels:
+            ds_type: $1 # 直接提取
+
+    - name: "GangstarServer-Linux-Shipping"   # shipping包进程名              
+      cmdlines: ["RobotServer","!ds_seed"]          
+      log_path_pattern: "-ABSLOG=(.+\\.log)"  
+      extracts:                               
+        - type: "regex"
+          pattern: "\\s-([^\\s=?]+)"
+          labels:
+            ds_type: $1 # 直接提取
+
+    metrics:
+      - name: "slow_fps"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server slow FPS events"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogDedicatedServer: 1 World, Frame: \\d+ slow at only (\\d+\\.?\\d*) FPS"
+        value: "$2"
+        enabled: true
+        density: 0 
+
+      - name: "online_player"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server online players"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogDedicatedServer: \\{.*?\"NbPlayers\":(\\d+)"
+        value: "$2"
+        enabled: true
+        density: 1 
+
+      - name: "avg_fps"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server avg fps"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogDedicatedServer: \\{.*?\"AvgFPS\":(\\d+)"
+        value: "$2"
+        enabled: true
+        density: 1 
+
+      - name: "npc"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server NPC Total"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogWorldStatistic: Verbose: World Statistic NPC (Total)/Managed/Cop/ESU: (\\d+)/\\d+/\\d+/\\d+"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1 
+
+      - name: "npc"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server NPC Total"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogWorldStatistic: Verbose: World Statistic NPC (Total)/Managed/Cop/ESU: (\\d+)/\\d+/\\d+/\\d+"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1
+
+      - name: "npc"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server NPC Managed"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogWorldStatistic: Verbose: World Statistic NPC Total/(Managed)/Cop/ESU: \\d+/(\\d+)/\\d+/\\d+"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1
+
+      - name: "npc"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server NPC Cop"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogWorldStatistic: Verbose: World Statistic NPC Total/Managed/(Cop)/ESU: \\d+/\\d+/(\\d+)/\\d+"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1
+
+      - name: "npc"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server NPC ESU"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogWorldStatistic: Verbose: World Statistic NPC Total/Managed/Cop/(ESU): \\d+/\\d+/\\d+/(\\d+)"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1
+
+      - name: "vehicle"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server Vehicle Total"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogWorldStatistic: Verbose: World Statistic Vehicle (Total)/Managed/Parked/Heli: (\\d+)/\\d+/\\d+/\\d+"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1 
+
+      - name: "vehicle"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server Vehicle Managed"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogWorldStatistic: Verbose: World Statistic Vehicle Total/(Managed)/Parked/Heli: \\d+/(\\d+)/\\d+/\\d+"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1
+      
+      - name: "vehicle"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server Vehicle Parked"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogWorldStatistic: Verbose: World Statistic Vehicle Total/Managed/(Parked)/Heli: \\d+/\\d+/(\\d+)/\\d+"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1
+      
+      - name: "vehicle"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server Vehicle Heli"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogWorldStatistic: Verbose: World Statistic Vehicle Total/Managed/Parked/(Heli): \\d+/\\d+/\\d+/(\\d+)"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1
+
+      - name: "adaptive_system"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server Adaptive System EA_VehicleNPC"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogAdaptiveSystem: DS Adaptive Adjust EAdaptiveGroupType::(EA_VehicleNPC) Factor: \\(\\d+\\.?\\d* -> (\\d+\\.?\\d*)\\)"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1 
+
+      - name: "adaptive_system"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server Adaptive System EA_VehicleNPC"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogAdaptiveSystem: DS Adaptive Adjust EAdaptiveGroupType::(EA_VehicleNPC) Factor: \\(\\d+\\.?\\d* -> (\\d+\\.?\\d*)\\)"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1  
+
+      - name: "adaptive_system"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server Adaptive System EA_VehicleNPC"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogAdaptiveSystem: DS Adaptive Adjust EAdaptiveGroupType::(EA_VehicleNPC) Factor: \\(\\d+\\.?\\d* -> (\\d+\\.?\\d*)\\)"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1  
+
+      - name: "adaptive_system"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server Adaptive System EA_Default"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogAdaptiveSystem: DS Adaptive Adjust EAdaptiveGroupType::(EA_Default) Factor: \\(\\d+\\.?\\d* -> (\\d+\\.?\\d*)\\)"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1
+
+      - name: "adaptive_system"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server Adaptive System EA_Activity"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogAdaptiveSystem: DS Adaptive Adjust EAdaptiveGroupType::(EA_Activity) Factor: \\(\\d+\\.?\\d* -> (\\d+\\.?\\d*)\\)"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1
+
+      - name: "adaptive_system"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server Adaptive System EA_RandomEvent"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogAdaptiveSystem: DS Adaptive Adjust EAdaptiveGroupType::(EA_RandomEvent) Factor: \\(\\d+\\.?\\d* -> (\\d+\\.?\\d*)\\)"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1
+
+      - name: "adaptive_system"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server Adaptive System EA_Mission"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogAdaptiveSystem: DS Adaptive Adjust EAdaptiveGroupType::(EA_Mission) Factor: \\(\\d+\\.?\\d* -> (\\d+\\.?\\d*)\\)"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1
+
+      - name: "adaptive_system"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Dedicated server Adaptive System EA_ActivityEntertain"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogAdaptiveSystem: DS Adaptive Adjust EAdaptiveGroupType::(EA_ActivityEntertain) Factor: \\(\\d+\\.?\\d* -> (\\d+\\.?\\d*)\\)"
+        value: "$3"
+        labels:
+          type: "$2"
+        enabled: true
+        density: 1
+       
+push_gateway:
+  app_id: "gstm"       # 应用ID
+  enabled: false                         # 是否开启推送
+  host: "http://124.222.179.251:5000"         # 推送网关地址
+  req_timeout: 10                       # 请求超时时间（秒）
+  report_interval: 10                   # 上报间隔（秒）
+  buf_size: 4096                        # 缓冲大小
+  print_metrics: true                   # 是否打印指标日志
+  channel_size: 10000                   # 通道大小
+  labels:                               # 全局标签
+    cluster: "stresstest2"

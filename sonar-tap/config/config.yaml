@@ -1,0 +1,99 @@
+step: 3
+sonar_store:
+    app_id: sonar-tap-e2e-test
+    enabled: false
+    host: http://localhost:8082
+    req_timeout: 5
+    report_interval: 10
+    buf_size: 1000
+    print_metrics: true
+    labels:
+        env: dev
+    channel_size: 4096
+process_exporter:
+    enabled: true
+    dynamic_interval: 5
+    rules:
+        - pid: 0
+          name: ""
+          cmdlines:
+            - dummy_server
+            - --id=server001
+          log_path_pattern: ""
+          extracts:
+            - type: regex
+              sep: ""
+              pattern: --id=(\w+)
+              labels:
+                server_id: $1
+node_exporter:
+    enabled: true
+    labels:
+        env: dev
+log_config:
+    - name: DummyServerLog
+      file_path: ""
+      rules:
+        - pid: 0
+          name: ""
+          cmdlines:
+            - dummy_server
+            - --id=server001
+          log_path_pattern: -LOG=(.+\.log)
+          extracts: []
+      dynamic_interval: 5
+      encoding: ""
+      enabled: true
+      read_mode: ""
+      max_file_size_mb: 0
+      time_zone: ""
+      watch:
+        poll_interval: ""
+        use_inotify: false
+        rotate_check_interval: ""
+        max_retries: 0
+      metrics:
+        - name: avg_fps
+          help: ""
+          pattern: AverageFps:(\d+)
+          enabled: true
+          density: 5
+          timestamp: ""
+          timestamp_format: ""
+          time_zone: ""
+          value: $1
+          labels: {}
+          is_record_minute_count: false
+        - name: latency_ms
+          help: ""
+          pattern: Latency:(\d+)ms
+          enabled: true
+          density: 5
+          timestamp: ""
+          timestamp_format: ""
+          time_zone: ""
+          value: $1
+          labels: {}
+          is_record_minute_count: false
+        - name: active_users
+          help: ""
+          pattern: ActiveUsers:(\d+)
+          enabled: true
+          density: 5
+          timestamp: ""
+          timestamp_format: ""
+          time_zone: ""
+          value: $1
+          labels: {}
+          is_record_minute_count: false
+        - name: error_log
+          help: ""
+          pattern: ERROR (.+)
+          enabled: true
+          density: 0
+          timestamp: ""
+          timestamp_format: ""
+          time_zone: ""
+          value: ""
+          labels: {}
+          is_record_minute_count: true

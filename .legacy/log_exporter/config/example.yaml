@@ -1,0 +1,103 @@
+# Log Exporter 配置文件示例
+# 日志配置列表
+log_config:
+  - name: "PVProjectServerForProcessCmdline" # 从进程命令行参数获取日志路径，这种可以采样运行时的进程日志数据，并且能够将pid注入到label中，形成进场和日志数据的关联
+    enabled: true
+    encoding: "utf-8"
+    read_mode: "tail"
+    time_zone: "Asia/Shanghai"
+    dynamic_interval: 15                      # 动态刷新进程列表的间隔（秒），用于检测新增或退出的进程
+    rules:                                    # 进程匹配规则(参考node_process_exporter的配置)
+    - name: "PVProjectServer"                 # 进程名称
+      cmdlines: ["--config","!seed"]          # 过滤进程的命令行参数，!代表反选
+      log_path_pattern: "-ABSLOG=(.+\\.log)"  # 从cmdlines中提取日志路径的正则表达式
+      extracts:                               # 提取默认标签
+        - type: "split"
+          sep: " "
+          labels:
+            ds_type: $1 # 自定义ds_type 的值为第1个参数
+
+        - type: "regex"
+          pattern: "--id=(\\w+)"
+          labels:
+            id: $1 # 直接提取
+
+    metrics:
+      # 低帧率事件计数
+      - name: "slow_fps"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Total slow FPS events detected"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogServerFPS: Warning: StatDurationFpsTick:ServerFPS TooLower Fps:(\\d+)"
+        value: "$2"
+        enabled: true
+        density: 1 # 采样密度，单位为秒，表示连续采样的数据点之间的时间间隔。例如，设置为15时，每15秒采集一个数据点，从而减少采样点的密集程度。
+
+      - name: "avg_fps"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Average FPS"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogServerFPS: StatDurationFpsTick:ServerFPS AverageFps:(\\d+),CurrentTime"
+        value: "$2"
+        enabled: true
+        density: 1
+
+      - name: "online_player"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Online Player"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogDsRaptor: Display: UpdateServerInfo: msg = {scene_id: 1 server_id: 10000 server_state: 1 server_load: (\\d+)}"
+        value: "$2"
+        enabled: true
+        density: 1
+
+  # 低帧率检测日志监控示例
+  - name: "PVProjectServerForLogDir" # 直接从日志文件或目录中提取
+    file_path: "/data/home/castlexu/debug/exporter/bin/logs/PVProjectServer*.log"
+    encoding: "utf-8"
+    enabled: true
+    read_mode: "tail"
+    time_zone: "Asia/Shanghai"
+    
+    metrics:
+      # 低帧率事件计数
+      - name: "slow_fps"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Total slow FPS events detected"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogServerFPS: Warning: StatDurationFpsTick:ServerFPS TooLower Fps:(\\d+)"
+        value: "$2"
+        enabled: true
+        density: 1 # 采样密度，单位为秒，表示连续采样的数据点之间的时间间隔。例如，设置为15时，每15秒采集一个数据点，从而减少采样点的密集程度。
+
+      - name: "avg_fps"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Average FPS"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogServerFPS: StatDurationFpsTick:ServerFPS AverageFps:(\\d+),CurrentTime"
+        value: "$2"
+        enabled: true
+        density: 1
+
+      - name: "online_player"
+        timestamp_format: "2006.01.02-15.04.05:000"
+        timestamp: "$1"
+        help: "Online Player"
+        pattern: "\\[(\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}:\\d{3})\\]\\[.*?\\]LogDsRaptor: Display: UpdateServerInfo: msg = {scene_id: 1 server_id: 10000 server_state: 1 server_load: (\\d+)}"
+        value: "$2"
+        enabled: true
+        density: 1
+
+# 推送网关配置
+push_gateway:
+  app_id: "debug_app"       # 应用ID
+  enabled: true                         # 是否开启推送
+  host: "http://localhost:8082"         # 推送网关地址
+  req_timeout: 10                       # 请求超时时间（秒）
+  report_interval: 10                   # 上报间隔（秒）
+  buf_size: 1000                        # 缓冲大小
+  print_metrics: true                   # 是否打印指标日志
+  channel_size: 10000                   # 通道大小
+  labels:                               # 全局标签
+    cluster: "debugcluster"
+    region: "castlexu"

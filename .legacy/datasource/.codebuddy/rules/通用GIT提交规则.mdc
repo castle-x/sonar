@@ -1,0 +1,10 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2026-01-22T06:44:29.875Z
+provider: 
+---
+
+1. 所有git提交、push、pull等操作必须询问用户
+2. 所有git提交文本的编写，必须带上feat或bugfix等标签，简要描述本次修改迭代内容。

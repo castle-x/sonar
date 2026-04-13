@@ -1,0 +1,73 @@
+# 采集间隔（秒）
+step: 15
+
+# 推送网关配置
+push_gateway:
+  app_id: "exporter_app"
+  enabled: true
+  host: "http://localhost:8082"
+  req_timeout: 10
+  report_interval: 15
+  buf_size: 1000
+  print_metrics: true
+  channel_size: 10000
+  labels:
+    cluster: "default"
+    region: "local"
+
+# 节点监控配置
+node_exporter:
+  enabled: true
+  labels:
+    env: "production"
+
+# 进程监控配置
+process_exporter:
+  enabled: false
+  dynamic_interval: 15
+  rules:
+    - name: "MyServer"
+      cmdlines:
+        - "--config"
+        - "!seed"
+      extracts:
+        - type: "regex"
+          pattern: "--id=(\\w+)"
+          labels:
+            server_id: $1
+
+# 日志监控配置
+log_config:
+  - name: "app_log"
+    enabled: false
+    file_path: "/var/log/app.log"
+    read_mode: "tail"
+    encoding: "utf-8"
+    watch:
+      poll_interval: "1s"
+      use_inotify: true
+      rotate_check_interval: "10s"
+      max_retries: 3
+    metrics:
+      - name: "error_count"
+        pattern: "\\[ERROR\\] (.+)"
+        enabled: true
+        is_record_minute_count: true
+
+  - name: "process_log"
+    enabled: false
+    dynamic_interval: 15
+    rules:
+      - name: "MyServer"
+        cmdlines: ["--config"]
+        log_path_pattern: "--log=(.+\\.log)"
+        extracts:
+          - type: "regex"
+            pattern: "--id=(\\w+)"
+            labels:
+              server_id: $1
+    metrics:
+      - name: "slow_request"
+        pattern: "\\[WARN\\] slow request (.+)"
+        enabled: true
+        density: 1

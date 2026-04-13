@@ -1,0 +1,409 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    SONAR-TAP WEB UI - EXECUTIVE SUMMARY
+═══════════════════════════════════════════════════════════════════════════════
+
+PROJECT: sonar-tap/site (React.js Frontend)
+PURPOSE: Real-time monitoring and configuration UI for sonar-tap metrics collector
+TECH STACK: React 19 + TypeScript 5.9 + Vite 7 + TanStack Query + Recharts
+
+───────────────────────────────────────────────────────────────────────────────
+                              PAGES / VIEWS SUMMARY
+───────────────────────────────────────────────────────────────────────────────
+
+✅ DASHBOARD (/dashboard)
+   ├─ 4 Stat Cards: Health, Processes, Watchers, Metrics
+   └─ 3 Charts: CPU (area), Memory (gauge), Disk IO (gauge)
+   📊 STATUS: COMPLETE
+
+✅ METRICS (/metrics)
+   ├─ Process sidebar filter (desktop) / sheet (mobile)
+   ├─ Searchable metrics data table
+   └─ Labels as expandable badges
+   📈 STATUS: COMPLETE
+
+✅ CONFIG (/config) - 4 TABS
+   ├─ Tab 1: Push Gateway Config ✅ COMPLETE
+   ├─ Tab 2: Node Exporter Config ✅ COMPLETE
+   ├─ Tab 3: Process Exporter Config ⚠️  PARTIAL
+   └─ Tab 4: Log Monitoring Config ⚠️  PARTIAL
+   ⚙️  STATUS: MOSTLY COMPLETE
+
+✅ DEBUG (/debug)
+   └─ Regex pattern tester with match/groups display
+   🐛 STATUS: COMPLETE
+
+❌ HOME (/home) - NOT IMPLEMENTED
+❌ SETTINGS (/settings) - NOT IMPLEMENTED
+
+───────────────────────────────────────────────────────────────────────────────
+                           CHARTS & VISUALIZATIONS
+───────────────────────────────────────────────────────────────────────────────
+
+CPU USAGE CHART
+├─ Type: Area Chart (Recharts)
+├─ Data: node_cpu_percent metrics (latest 200)
+├─ Display: Line graph with gradient fill + tooltip
+├─ Update: Every 5 seconds (auto-refetch)
+└─ Features: Time axis, 0-100% Y-axis, live % in header
+
+MEMORY GAUGE
+├─ Type: Radial Bar Chart (circular progress)
+├─ Data: node_mem_percent (single value)
+├─ Display: Circular ring 0-100% with center percentage
+└─ Features: Optional subtitle (e.g., "1.2 GB used")
+
+DISK IO GAUGE
+├─ Type: Radial Bar Chart (circular progress)
+├─ Data: node_disk_io_util (single value)
+├─ Display: Circular ring 0-100% with center percentage
+└─ Features: Color-coded via CSS variable
+
+───────────────────────────────────────────────────────────────────────────────
+                          DATA FETCHING ARCHITECTURE
+───────────────────────────────────────────────────────────────────────────────
+
+ALL APIS CENTRALIZED IN: src/shared/hooks/use-tap-api.ts
+
+Query Hooks (GET):
+├─ useHealth()              → GET /api/v1/health
+├─ useProcesses()           → GET /api/v1/processes
+├─ useStatus()              → GET /api/v1/status
+├─ useMetricsPreview(N)     → GET /api/v1/metrics/preview?limit=N
+└─ useConfig()              → GET /api/v1/config
+
+Mutation Hooks (POST/PATCH/PUT):
+├─ usePatchNodeConfig()     → PATCH /api/v1/config/node
+├─ usePatchProcessConfig()  → PATCH /api/v1/config/process
+├─ usePatchLogConfig()      → PATCH /api/v1/config/log
+├─ usePatchPushGateway()    → PUT /api/v1/config
+├─ useReloadConfig()        → POST /api/v1/config/reload
+└─ useDebugRegex()          → POST /api/v1/debug/regex
+
+Framework: TanStack React Query (v5)
+├─ Automatic caching & refetching
+├─ Error handling with toast notifications
+├─ Query invalidation on mutations
+└─ Configurable stale time & refetch intervals
+
+───────────────────────────────────────────────────────────────────────────────
+                              DIRECTORY STRUCTURE
+───────────────────────────────────────────────────────────────────────────────
+
+src/
+├─ api/                      ← Auto-generated TypeScript RPC clients
+│  └─ sonar-store/metrics/v1/ (metrics data)
+│  └─ sonar-tap/hello/v1/     (status/hello)
+│
+├─ app/                      ← Application shell
+│  ├─ App.tsx               ← Route definitions
+│  ├─ main.tsx              ← Entry point
+│  ├─ providers.tsx         ← Global providers (Query, Theme, i18n)
+│  ├─ layout/
+│  │  ├─ index.tsx          ← DashboardLayout wrapper
+│  │  ├─ nav-config.ts      ← Navigation structure
+│  │  └─ components/        ← Header, sidebar, nav components
+│  └─ styles/
+│     └─ globals.css        ← Global Tailwind + CSS
+│
+├─ views/                   ← Page-level components
+│  ├─ dashboard/            ← Dashboard page + chart components
+│  │  ├─ index.tsx
+│  │  ├─ cpu-chart.tsx
+│  │  ├─ capacity-gauge.tsx
+│  │  └─ stat-card.tsx
+│  ├─ metrics/              ← Metrics page + table/list
+│  │  ├─ index.tsx
+│  │  ├─ metrics-table.tsx
+│  │  └─ process-list.tsx
+│  ├─ config/               ← Config page + 4 forms
+│  │  ├─ index.tsx
+│  │  ├─ push-gateway-form.tsx
+│  │  ├─ node-exporter-form.tsx
+│  │  ├─ process-exporter-form.tsx
+│  │  └─ log-config-form.tsx
+│  ├─ debug/                ← Debug page
+│  │  └─ index.tsx
+│  ├─ home/                 ← (empty)
+│  └─ settings/             ← (empty)
+│
+├─ shared/                  ← Shared utilities
+│  ├─ hooks/
+│  │  ├─ use-tap-api.ts     ← ⭐ ALL API CALLS HERE
+│  │  ├─ use-locale.ts
+│  │  ├─ use-theme.ts
+│  │  ├─ use-mobile.ts
+│  │  └─ use-api-error.ts
+│  ├─ lib/
+│  │  └─ utils.ts
+│  ├─ shadcn/               ← 18+ pre-built UI components
+│  │  ├─ button.tsx
+│  │  ├─ card.tsx
+│  │  ├─ table.tsx
+│  │  ├─ chart.tsx (wrapper for Recharts)
+│  │  ├─ dialog.tsx
+│  │  ├─ sheet.tsx
+│  │  ├─ tabs.tsx
+│  │  ├─ input.tsx
+│  │  ├─ select.tsx
+│  │  ├─ switch.tsx
+│  │  ├─ badge.tsx
+│  │  ├─ skeleton.tsx
+│  │  ├─ tooltip.tsx
+│  │  ├─ separator.tsx
+│  │  ├─ sidebar.tsx
+│  │  └─ ... (more)
+│  ├─ wk/                   ← Custom widgets
+│  │  └─ components/
+│  │     ├─ theme-provider.tsx
+│  │     ├─ mode-toggle.tsx
+│  │     ├─ locale-switcher.tsx
+│  │     └─ api-error-dialog.tsx
+│  └─ types/
+│
+└─ i18n/                    ← Internationalization
+   ├─ index.ts              ← i18next config
+   ├─ types.ts
+   └─ locales/
+      ├─ en/                ← English translations
+      │  ├─ common.json
+      │  ├─ dashboard.json
+      │  └─ theme.json
+      └─ zh-CN/             ← Chinese translations
+         ├─ common.json
+         ├─ dashboard.json
+         └─ theme.json
+
+───────────────────────────────────────────────────────────────────────────────
+                            TECH STACK SUMMARY
+───────────────────────────────────────────────────────────────────────────────
+
+CORE
+├─ React 19.2.0           ← UI library
+├─ TypeScript 5.9.3       ← Type-safe language
+└─ Vite 7.2.0             ← Lightning-fast bundler
+
+ROUTING
+├─ React Router 7.13      ← Client-side routing
+
+DATA FETCHING & STATE
+├─ TanStack React Query 5.90.0   ← Server state management
+├─ Zustand 5.0.11               ← Client state (optional)
+└─ Fetch API                     ← HTTP requests (no Axios)
+
+UI & COMPONENTS
+├─ Tailwind CSS 4.1              ← Utility-first styling
+├─ shadcn/ui 0.9.5              ← Pre-built components
+├─ Radix UI 1.4.3               ← Accessible primitives
+├─ @hugeicons/react 1.1.6       ← 400+ free icons
+└─ Lucide React 0.525           ← More icon library
+
+CHARTS & DATA VIZ
+├─ Recharts 3.8.0       ← React charting library
+
+FORMS & VALIDATION
+├─ React Hook Form 7.71 ← Performant form management
+├─ @hookform/resolvers 5.2 ← Integration with validators
+└─ Zod 4.3.0            ← Schema validation
+
+INTERNATIONALIZATION
+├─ i18next 25.8.18      ← i18n framework
+└─ react-i18next 16.5.8 ← React i18n hooks
+
+THEME & STYLING
+├─ next-themes 0.4.6    ← Dark mode management
+├─ @fontsource-variable/inter 5.2.8
+├─ @fontsource-variable/manrope 5.2.8
+└─ Tailwind Merge 3.0   ← Class name merging
+
+NOTIFICATIONS
+├─ Sonner 2.0.7         ← Toast notifications
+
+UTILITIES
+├─ Motion 12.38.0       ← Animation library
+├─ class-variance-authority 0.7 ← CVA for component variants
+└─ Clsx 2.0.0           ← Classname utility
+
+DEV TOOLS
+├─ Biome 2.3.0          ← Fast linter & formatter
+└─ Typescript 5.9.3     ← Type checking
+
+───────────────────────────────────────────────────────────────────────────────
+                         WHAT'S IMPLEMENTED vs MISSING
+───────────────────────────────────────────────────────────────────────────────
+
+✅ IMPLEMENTED (Ready to Use)
+├─ Dashboard with real-time stats & charts
+├─ Metrics explorer with process filtering
+├─ Push Gateway configuration form
+├─ Node Exporter configuration form
+├─ Debug/Regex testing tool
+├─ Responsive mobile layout
+├─ Dark/light theme toggle
+├─ English & Chinese translations (i18n)
+├─ API integration with auto-refetch
+├─ Error handling & toast notifications
+├─ Type-safe component architecture
+└─ Recharts visualizations (area chart, radial gauge)
+
+⚠️  PARTIALLY IMPLEMENTED (Need Completion)
+├─ Process Exporter form (structure exists, fields incomplete)
+├─ Log Monitoring config (structure exists, form not built)
+└─ Complex nested form management (for rules)
+
+❌ NOT IMPLEMENTED (Gaps)
+├─ Home & Settings pages
+├─ Real-time WebSocket streaming (polling instead)
+├─ Metric history/archival views
+├─ Alerting & threshold configuration UI
+├─ Data export (CSV/JSON)
+├─ API documentation UI (Swagger/OpenAPI)
+├─ Advanced metric filtering UI
+├─ Dashboard customization (drag-drop widgets)
+└─ Performance analytics dashboard
+
+───────────────────────────────────────────────────────────────────────────────
+                           QUICK START FOR DEVELOPERS
+───────────────────────────────────────────────────────────────────────────────
+
+SETUP
+$ cd sonar-tap/site
+$ npm install
+$ npm run dev          # Start dev server (http://localhost:5173)
+
+DEVELOPMENT
+$ npm run lint         # Check code with Biome
+$ npm run lint:fix     # Auto-fix issues
+$ npm run typecheck    # Find TypeScript errors
+$ npm run build        # Production build
+
+ADDING NEW PAGE
+1. Create: src/views/mypage/index.tsx
+2. Add route: src/app/App.tsx
+3. Add nav item: src/app/layout/nav-config.ts
+4. Add i18n: src/i18n/locales/{en,zh-CN}/dashboard.json
+
+ADDING NEW API CALL
+1. Define type: interface MyResponse { ... }
+2. Add hook: export function useMyData() { return useQuery(...) }
+3. Use in component: const { data } = useMyData()
+
+STYLING
+├─ Use Tailwind classes: className="flex items-center gap-2"
+├─ No CSS files needed (Tailwind-only approach)
+├─ Dark mode works automatically via CSS variables
+└─ Chart colors: var(--chart-1), var(--chart-2), etc.
+
+i18n TRANSLATIONS
+1. Edit: src/i18n/locales/en/dashboard.json
+2. Edit: src/i18n/locales/zh-CN/dashboard.json
+3. Use: const { t } = useTranslation("dashboard");
+4. Render: {t("pages.dashboard.cards.health")}
+
+───────────────────────────────────────────────────────────────────────────────
+                             API ENDPOINTS USED
+───────────────────────────────────────────────────────────────────────────────
+
+All endpoints at base URL (e.g., http://localhost:3001/api/v1/...)
+
+GET /health              ← Health status (refetch: 5s)
+GET /processes           ← Process list (refetch: 10s)
+GET /status              ← Watcher count (refetch: 10s)
+GET /metrics/preview     ← Recent metrics (refetch: 5s)
+GET /config              ← Current configuration
+PUT /config              ← Update full config
+PATCH /config/node       ← Update node exporter
+PATCH /config/process    ← Update process exporter
+PATCH /config/log        ← Update log monitoring
+POST /config/reload      ← Reload config from disk
+POST /debug/regex        ← Test regex pattern
+
+───────────────────────────────────────────────────────────────────────────────
+                              FILE STATISTICS
+───────────────────────────────────────────────────────────────────────────────
+
+TypeScript/TSX Files:    ~40 files
+Lines of Code:           ~3,000+
+Views/Pages:             6 (4 implemented, 2 empty)
+Chart Components:        3 (CPU area, 2 radial gauges)
+API Hooks:               11 (6 queries, 5 mutations)
+Shadcn Components Used:  18+
+i18n Languages:          2 (EN, ZH-CN)
+Build Size (gzipped):    ~150KB JavaScript
+
+───────────────────────────────────────────────────────────────────────────────
+                              KEY FILES TO KNOW
+───────────────────────────────────────────────────────────────────────────────
+
+⭐ MOST IMPORTANT
+├─ src/shared/hooks/use-tap-api.ts      ← ALL API CALLS HERE
+├─ src/app/App.tsx                      ← Route definitions
+├─ src/app/layout/nav-config.ts         ← Navigation structure
+├─ src/views/dashboard/index.tsx        ← Dashboard page
+├─ src/views/metrics/index.tsx          ← Metrics page
+└─ src/views/config/index.tsx           ← Config page
+
+CHARTS
+├─ src/views/dashboard/cpu-chart.tsx           ← Area chart
+├─ src/views/dashboard/capacity-gauge.tsx     ← Gauge charts
+└─ src/shared/shadcn/chart.tsx                ← Chart wrapper
+
+UI COMPONENTS
+├─ src/shared/shadcn/*.tsx             ← 18+ pre-built components
+├─ src/shared/wk/components/*.tsx      ← Custom widgets
+└─ src/app/layout/components/*.tsx     ← Layout components
+
+STYLING & THEME
+├─ src/app/styles/globals.css          ← Global styles
+├─ src/shared/wk/components/theme-provider.tsx
+└─ src/shared/wk/components/mode-toggle.tsx
+
+INTERNATIONALIZATION
+├─ src/i18n/index.ts                   ← i18n config
+├─ src/i18n/locales/en/dashboard.json  ← English strings
+└─ src/i18n/locales/zh-CN/dashboard.json ← Chinese strings
+
+───────────────────────────────────────────────────────────────────────────────
+                            COMMON TASKS GUIDE
+───────────────────────────────────────────────────────────────────────────────
+
+ADD A NEW STAT CARD
+→ Edit: src/views/dashboard/index.tsx
+→ Add: <StatCard title="" icon={} useXXX()={} />
+→ Add strings to i18n files
+
+ADD A NEW CHART
+→ Create: src/views/dashboard/my-chart.tsx
+→ Use Recharts: AreaChart, BarChart, PieChart, etc.
+→ Import: types from use-tap-api.ts
+→ Add to dashboard page
+
+ADD A NEW PAGE
+→ Step 1: Create src/views/mypage/index.tsx
+→ Step 2: Add route to src/app/App.tsx
+→ Step 3: Add nav item to src/app/layout/nav-config.ts
+→ Step 4: Add i18n strings
+
+ADD NEW CONFIG FORM
+→ Create: src/views/config/my-form.tsx
+→ Use usePatchXXX() hook from use-tap-api.ts
+→ Add tab to ConfigPage tabs
+→ Add i18n labels
+
+FIX CHART NOT UPDATING
+→ Check refetch interval in hook
+→ Check if API returns new data
+→ Check React Query cache time
+→ Use React Query DevTools
+
+UPDATE TRANSLATIONS
+→ Edit: src/i18n/locales/en/dashboard.json
+→ Edit: src/i18n/locales/zh-CN/dashboard.json
+→ Restart dev server if needed
+
+───────────────────────────────────────────────────────────────────────────────
+
+For detailed analysis, see:
+  • SONAR_TAP_WEB_UI_ANALYSIS.md (comprehensive documentation)
+  • SONAR_TAP_WEB_UI_QUICK_REFERENCE.md (developer quick guide)
+
+═══════════════════════════════════════════════════════════════════════════════

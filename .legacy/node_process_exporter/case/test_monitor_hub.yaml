@@ -1,0 +1,38 @@
+# monitor_hub 进程监控测试配置
+# 用于验证磁盘IO指标
+
+# 全局配置
+step: 15  # 采集间隔（秒）
+
+# 推送网关配置
+push_gateway:
+  app_id: "test"
+  enabled: false                  # 关闭推送，仅本地测试
+  host: "http://127.0.0.1:5000"
+  req_timeout: 10
+  report_interval: 10
+  buf_size: 1000
+  print_metrics: true             # 开启指标打印，用于检查输出
+  channel_size: 10000
+  labels:
+    cluster: "local_test"
+    region: "dev"
+
+# 进程监控配置
+process_exporter:
+  enabled: true
+  dynamic_interval: 30            # 动态刷新间隔（秒）
+  rules:
+    - name: "monitor_hub"         # 进程名称
+      pid: 1672091                # 直接指定 PID 测试
+      extracts:
+        - type: "default"
+          labels:
+            service: "monitor_hub"
+            env: "local"
+
+# 节点监控配置  
+node_exporter:
+  enabled: true
+  labels:
+    host: "VM-120-94-tencentos"

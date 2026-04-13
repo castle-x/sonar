@@ -1,0 +1,30 @@
+{
+  "user": {
+    "fallback": "User",
+    "profile": "Profile",
+    "logout": "Log out"
+  },
+  "nav": {
+    "home": "Home",
+    "settings": "Settings"
+  },
+  "pages": {
+    "home": {
+      "title": "Home",
+      "description": "Welcome to {{name}}. This is your dashboard home page.",
+      "sayHello": {
+        "title": "Say Hello API",
+        "description": "Test the API connection by sending a greeting request.",
+        "send": "Send",
+        "loading": "Sending...",
+        "placeholder": "Enter your name"
+      }
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "Application settings coming soon.",
+      "comingSoon": "Coming Soon",
+      "comingSoonDescription": "Settings are under development, stay tuned."
+    }
+  }
+}

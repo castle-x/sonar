@@ -1,0 +1,22 @@
+{
+  "mode": {
+    "toggle": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "accent": {
+    "label": "Accent Color",
+    "neutral": "Default",
+    "emerald": "Emerald",
+    "sapphire": "Sapphire"
+  },
+  "selector": {
+    "title": "Select color theme"
+  },
+  "dropdown": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme"
+  }
+}

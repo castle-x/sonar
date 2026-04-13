@@ -1,0 +1,281 @@
+# ============================================
+# WebSocket 协议定义文件（类 Thrift 风格）
+# ============================================
+# 文件命名规范：{service}_ws.yaml
+# 生成代码文件：{service}_ws.go
+# 
+# 与 Thrift 保持一致的设计理念：
+# - structs: 纯粹的结构体定义（带 tag 和验证）
+# - services: WebSocket 服务接口定义（订阅/推送）
+# ============================================
+
+namespace: go monitor_hub.datasource.v1
+
+include:
+  - "../../../monitor_hub/base/v1/base.ws.yaml"
+
+# ============================================
+# 结构体定义（Struct Definitions）
+# ============================================
+# 纯粹的数据结构，可被多个 service 复用
+# 类似 Thrift struct，但增加了 WebSocket 特有的标注
+# ============================================
+
+structs:
+  # Pushgateway 地址状态
+  - name: AddressStatus
+    description: "单个 Pushgateway 地址的状态信息"
+    fields:
+      - id: 1
+        name: address
+        type: string
+        required: true
+        description: "地址（host:port）"
+        tags:
+          go: 'json:"address" bson:"address"'
+          vt: 'min_size:"1"'
+        example: "localhost:9091"
+      
+      - id: 2
+        name: status
+        type: string
+        required: true
+        description: "状态：online / offline"
+        tags:
+          go: 'json:"status" bson:"status"'
+          vt: 'in:"online,offline"'
+        enum: ["online", "offline"]
+      
+      - id: 3
+        name: latency_ms
+        type: int32
+        required: true
+        description: "响应延迟（毫秒），offline 时为 0"
+        tags:
+          go: 'json:"latency_ms" bson:"latency_ms"'
+          vt: 'gte:"0"'
+      
+      - id: 4
+        name: error_message
+        type: string
+        required: false
+        description: "错误信息（仅在 offline 时有值）"
+        tags:
+          go: 'json:"error_message,omitempty" bson:"error_message"'
+          vt: 'max_size:"500"'
+      
+      - id: 5
+        name: last_online_time
+        type: int64
+        required: false
+        description: "最后一次在线时间（Unix 时间戳，秒）"
+        tags:
+          go: 'json:"last_online_time,omitempty" bson:"last_online_time"'
+      
+      - id: 6
+        name: total_series
+        type: int64
+        required: false
+        description: "总序列数"
+        tags:
+          go: 'json:"total_series,omitempty" bson:"total_series"'
+      
+      - id: 7
+        name: disk_size
+        type: int64
+        required: false
+        description: "磁盘占用大小（字节）"
+        tags:
+          go: 'json:"disk_size,omitempty" bson:"disk_size"'
+      
+      - id: 8
+        name: retention_days
+        type: int32
+        required: false
+        description: "数据保留天数"
+        tags:
+          go: 'json:"retention_days,omitempty" bson:"retention_days"'
+      
+      - id: 9
+        name: total_samples
+        type: int64
+        required: false
+        description: "采样点总数"
+        tags:
+          go: 'json:"total_samples,omitempty" bson:"total_samples"'
+
+  # 数据源状态
+  - name: DatasourceStatus
+    description: "单个数据源的完整状态信息"
+    fields:
+      - id: 1
+        name: datasource_id
+        type: string
+        required: true
+        description: "数据源ID"
+        tags:
+          go: 'json:"datasource_id" bson:"datasource_id"'
+          vt: 'min_size:"1"'
+      
+      - id: 2
+        name: name
+        type: string
+        required: true
+        description: "数据源名称"
+        tags:
+          go: 'json:"name" bson:"name"'
+          vt: 'min_size:"1",max_size:"100"'
+      
+      - id: 3
+        name: app_id
+        type: string
+        required: true
+        description: "项目标识"
+        tags:
+          go: 'json:"app_id" bson:"app_id"'
+          vt: 'min_size:"1",max_size:"50"'
+      
+      - id: 4
+        name: addresses
+        type: list<AddressStatus>
+        required: true
+        description: "所有 Pushgateway 地址的状态"
+        tags:
+          go: 'json:"addresses" bson:"addresses"'
+          vt: 'min_size:"1"'
+      
+      - id: 5
+        name: overall_status
+        type: string
+        required: true
+        description: "整体状态：healthy(全部在线) / degraded(部分在线) / down(全部离线)"
+        tags:
+          go: 'json:"overall_status" bson:"overall_status"'
+          vt: 'in:"healthy,degraded,down"'
+        enum: ["healthy", "degraded", "down"]
+      
+      - id: 6
+        name: healthy_count
+        type: int32
+        required: true
+        description: "健康的地址数量"
+        tags:
+          go: 'json:"healthy_count" bson:"healthy_count"'
+          vt: 'gte:"0"'
+      
+      - id: 7
+        name: total_count
+        type: int32
+        required: true
+        description: "总地址数量"
+        tags:
+          go: 'json:"total_count" bson:"total_count"'
+          vt: 'gte:"1"'
+      
+      - id: 8
+        name: last_check_time
+        type: int64
+        required: true
+        description: "最后检查时间（Unix 时间戳，秒）"
+        tags:
+          go: 'json:"last_check_time" bson:"last_check_time"'
+
+  # ============================================
+  # 请求/响应结构体
+  # ============================================
+
+  # 订阅数据源状态请求
+  - name: SubscribeDatasourceStatusRequest
+    description: "订阅数据源状态更新的请求参数"
+    fields:
+      - id: 1
+        name: datasource_ids
+        type: list<string>
+        required: false
+        description: "要订阅的数据源ID列表，空列表或不传表示订阅全部"
+        tags:
+          go: 'json:"datasource_ids,omitempty"'
+        example: '["ds-001", "ds-002"]'
+      
+      - id: 2
+        name: include_details
+        type: bool
+        required: false
+        default: true
+        description: "是否包含详细信息（如每个地址的状态）"
+        tags:
+          go: 'json:"include_details,omitempty"'
+
+  # 数据源状态推送
+  - name: DatasourceStatusBroadcast
+    description: "推送数据源状态更新"
+    fields:
+      - id: 1
+        name: updates
+        type: list<DatasourceStatus>
+        required: true
+        description: "更新的数据源状态列表"
+        tags:
+          go: 'json:"updates"'
+          vt: 'not_nil:"true"'
+
+  # 取消订阅请求
+  - name: UnsubscribeRequest
+    description: "取消订阅请求"
+    fields:
+      - id: 1
+        name: topic
+        type: string
+        required: true
+        description: "要取消订阅的主题"
+        tags:
+          go: 'json:"topic"'
+          vt: 'min_size:"1"'
+
+# ============================================
+# 服务定义（Service Definitions）
+# ============================================
+# 定义 WebSocket 服务接口
+# 
+# 设计原则：
+# - 每个资源目录只有一个 service
+# - service 名称格式：{Resource}Service（如 DatasourceService）
+# - 通过 methods 定义不同的 action
+# - 每个 method 都有 topic，格式：{resource}.{action}
+# 
+# Method 类型说明：
+# - subscribe: 客户端订阅 -> 服务端返回确认
+# - push: 服务端主动推送数据（单向）
+# - unsubscribe: 客户端取消订阅 -> 服务端返回确认
+# - request: 客户端请求 -> 服务端响应（双向通信）
+# ============================================
+
+service:
+  # 服务名称（默认为 {Resource}Service）
+  name: DatasourceService
+  description: "数据源相关的 WebSocket 服务"
+  topics:
+    - name: datasource.status
+      description: "数据源状态"
+      method:
+        - name: SubscribeDatasourceStatus
+          type: request
+          path: /subscribe
+          description: "订阅数据源状态"
+          request: SubscribeDatasourceStatusRequest
+          response: base.WsResponse
+          
+        - name: UnsubscribeDatasourceStatus
+          type: request
+          path: /unsubscribe
+          description: "取消订阅数据源状态"
+          request: UnsubscribeRequest
+          response: base.WsResponse
+
+        - name: BroadcastDatasourceStatus
+          type: broadcast
+          description: "广播数据源状态"
+          response: DatasourceStatusBroadcast
+          options:
+            trigger_type: interval
+            interval: 10s

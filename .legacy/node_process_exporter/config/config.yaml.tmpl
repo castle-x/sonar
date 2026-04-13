@@ -1,0 +1,40 @@
+# 全局配置
+step: 3  # 采集间隔（秒）
+
+# 推送网关配置
+push_gateway:
+  app_id: "debug_app"       # 应用ID
+  enabled: true                # 是否开启推送
+  host: "http://localhost:8082"         # 推送网关地址
+  req_timeout: 10                       # 请求超时时间（秒）
+  report_interval: 10                   # 上报间隔（秒）
+  buf_size: 1000                        # 缓冲大小
+  print_metrics: true                   # 是否打印指标日志
+  channel_size: 10000                   # 通道大小
+  labels:                               # 全局标签
+    cluster: "debugcluster"
+    region: "castlexu"
+
+# 进程监控配置
+process_exporter:
+  enabled: true                         # 是否开启进程监控
+  dynamic_interval: 15                  # 动态刷新间隔（秒），0代表不开启
+  rules:                                # 进程匹配规则
+    - name: "PVProjectServer"           # 进程名称（用于标识）
+      cmdlines:                         # 过滤规则
+        - "--config"                    # 包含config !反选
+        - "!seed"                       # 不包含config
+      extracts:                         # 提取标签
+        - type: "split"
+          sep: " "
+          labels:
+            ds_type: $1 # 自定义ds_type 的值为第1个参数
+
+        - type: "regex"
+          pattern: "--id=(\\w+)"
+          labels:
+            id: $1 # 直接提取
+
+# 节点监控配置  
+node_exporter:
+  enabled: true                         # 是否开启节点监控

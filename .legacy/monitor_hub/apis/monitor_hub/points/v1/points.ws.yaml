@@ -1,0 +1,331 @@
+# ============================================
+# WebSocket 协议定义文件（聚合数据推送）
+# ============================================
+
+namespace: go monitor_hub.points.v1
+
+include:
+  - "../../../monitor_hub/base/v1/base.ws.yaml"
+
+# ============================================
+# 结构体定义
+# ============================================
+
+structs:
+  # 数据质量信息（匹配 aggregator.DataQuality）
+  - name: DataQuality
+    description: "数据质量信息"
+    fields:
+      - id: 1
+        name: actual_points
+        type: int32
+        required: true
+        description: "实际采样点数"
+        tags:
+          go: 'json:"actual_points,omitempty" bson:"actual_points"'
+          vt: 'gte:"0"'
+      
+      - id: 2
+        name: expected_points
+        type: int32
+        required: true
+        description: "期望采样点数"
+        tags:
+          go: 'json:"expected_points,omitempty" bson:"expected_points"'
+          vt: 'gte:"0"'
+      
+      - id: 3
+        name: score
+        type: double
+        required: true
+        description: "质量分数（0-100），100表示完整数据，0表示无数据"
+        tags:
+          go: 'json:"score" bson:"score"'
+          vt: 'gte:"0",lte:"100"'
+      
+      - id: 4
+        name: status
+        type: string
+        required: true
+        description: "数据状态：complete(完整) / partial(部分) / degraded(降级) / missing(缺失)"
+        tags:
+          go: 'json:"status" bson:"status"'
+        enum: ["complete", "partial", "degraded", "missing"]
+      
+      - id: 5
+        name: missing_reason
+        type: string
+        required: false
+        description: "数据缺失/降级原因"
+        tags:
+          go: 'json:"missing_reason,omitempty" bson:"missing_reason"'
+
+  # 聚合数据点（匹配 aggregator.AggregatedPoint）
+  - name: AggregatedPoint
+    description: "单个聚合数据点（扁平化结构，每个聚合类型对应一个数据点）"
+    fields:
+      - id: 1
+        name: datasource_id
+        type: string
+        required: true
+        description: "数据源ID"
+        tags:
+          go: 'json:"datasource_id" bson:"datasource_id"'
+          vt: 'min_size:"1"'
+      
+      - id: 2
+        name: name
+        type: string
+        required: true
+        description: "指标名称"
+        tags:
+          go: 'json:"name" bson:"name"'
+          vt: 'min_size:"1",max_size:"200"'
+      
+      - id: 3
+        name: labels
+        type: list<string>
+        required: true
+        description: "标签集合（包含 __aggregation_level__、__statistic_suffix__ 等内部标签）"
+        tags:
+          go: 'json:"labels" bson:"labels"'
+      
+      - id: 4
+        name: level
+        type: string
+        required: true
+        description: "聚合级别：15s/1m/5m/15m/1h/6h/1d"
+        tags:
+          go: 'json:"level" bson:"level"'
+          vt: 'min_size:"1"'
+        example: "15s"
+      
+      - id: 5
+        name: timestamp
+        type: int64
+        required: true
+        description: "时间戳（Unix 毫秒，对齐到级别边界）"
+        tags:
+          go: 'json:"timestamp" bson:"timestamp"'
+          vt: 'gt:"0"'
+      
+      - id: 6
+        name: date
+        type: string
+        required: false
+        description: "日期（调试查看使用）"
+        tags:
+          go: 'json:"date,omitempty" bson:"date"'
+      
+      - id: 7
+        name: aggregation_type
+        type: string
+        required: true
+        description: "聚合类型：avg/min/max/count/last"
+        tags:
+          go: 'json:"aggregation_type" bson:"aggregation_type"'
+          vt: 'in:"avg,min,max,count,last"'
+        enum: ["avg", "min", "max", "count", "last"]
+      
+      - id: 8
+        name: value
+        type: double
+        required: true
+        description: "聚合后的值"
+        tags:
+          go: 'json:"value" bson:"value"'
+      
+      - id: 9
+        name: quality
+        type: DataQuality
+        required: true
+        description: "数据质量信息"
+        tags:
+          go: 'json:"quality" bson:"quality"'
+
+  # ============================================
+  # 订阅请求结构体
+  # ============================================
+
+  # 订阅聚合数据请求
+  - name: SubscribePointsRequest
+    description: "订阅实时聚合数据推送（推荐订阅小级别：15s、1m、5m）"
+    fields:
+      - id: 1
+        name: datasource_id
+        type: string
+        required: true
+        description: "数据源ID"
+        tags:
+          go: 'json:"datasource_id"'
+          vt: 'min_size:"1"'
+        example: "ds-12345"
+      
+      - id: 2
+        name: aggregation_levels
+        type: list<string>
+        required: true
+        description: "要订阅的聚合等级列表（如 ['15s', '1m']）"
+        tags:
+          go: 'json:"aggregation_levels"'
+          vt: 'min_size:"1"'
+        example: '["15s", "1m"]'
+        comment: "推荐订阅小级别数据（15s、1m、5m），大级别数据建议使用 HTTP API 查询"
+      
+      - id: 3
+        name: metric_filters
+        type: list<string>
+        required: false
+        description: "指标名称过滤（可选，为空表示订阅所有指标）"
+        tags:
+          go: 'json:"metric_filters,omitempty"'
+        example: '["cpu_usage", "memory_usage"]'
+      
+      - id: 4
+        name: labels
+        type: list<string>
+        required: false
+        description: "标签过滤条件（可选，支持精确匹配）"
+        tags:
+          go: 'json:"labels,omitempty"'
+        example: '[["host", "server-01"], ["env", "prod"]]'
+
+  # 取消订阅请求
+  - name: UnsubscribePointsRequest
+    description: "取消订阅请求"
+    fields:
+      - id: 1
+        name: datasource_id
+        type: string
+        required: true
+        description: "数据源ID"
+        tags:
+          go: 'json:"datasource_id"'
+      
+      - id: 2
+        name: aggregation_levels
+        type: list<string>
+        required: false
+        description: "要取消的聚合等级（为空表示取消该数据源的所有订阅）"
+        tags:
+          go: 'json:"aggregation_levels,omitempty"'
+
+  # ============================================
+  # 推送数据结构体
+  # ============================================
+
+  # 聚合数据推送
+  - name: PointsBroadcast
+    description: "实时推送聚合数据更新（所有信息都在 points 中）"
+    fields:
+      - id: 1
+        name: points
+        type: list<AggregatedPoint>
+        required: true
+        description: "聚合数据点列表（每个点包含完整信息：datasource_id, level, timestamp 等）"
+        tags:
+          go: 'json:"points"'
+      
+      - id: 2
+        name: count
+        type: int32
+        required: true
+        description: "数据点数量"
+        tags:
+          go: 'json:"count"'
+
+# ============================================
+# 服务定义（Service Definitions）
+# ============================================
+# 通用化设计，不硬编码聚合等级
+# - 通过请求参数中的 aggregation_levels 动态指定订阅的等级
+# - 使用事件触发机制，支持多个等级的动态推送
+# - 推送消息中包含 aggregation_level 字段标识具体等级
+# ============================================
+
+service:
+  name: PointsService
+  description: "聚合数据点实时推送服务（通用接口，支持动态订阅多个等级）"
+  
+  topics:
+    # 🔥 通用 topic，不硬编码聚合等级
+    - name: points
+      description: "聚合数据实时推送（支持动态订阅任意等级）"
+      method:
+        # 1️⃣ 订阅方法
+        - name: SubscribePoints
+          type: request
+          path: /subscribe
+          description: "订阅聚合数据（可同时订阅多个等级）"
+          request: SubscribePointsRequest
+          response: base.WsResponse
+          comment: |
+            客户端发送订阅请求，在 aggregation_levels 参数中指定要订阅的等级列表。
+            例如: {"datasource_id": "ds-001", "aggregation_levels": ["15s", "1m"]}
+        
+        # 2️⃣ 取消订阅方法
+        - name: UnsubscribePoints
+          type: request
+          path: /unsubscribe
+          description: "取消订阅聚合数据"
+          request: UnsubscribePointsRequest
+          response: base.WsResponse
+          comment: |
+            客户端发送取消订阅请求，可指定取消特定等级或全部。
+            例如: {"datasource_id": "ds-001", "aggregation_levels": ["15s"]}
+        
+        # 3️⃣ 广播方法
+        - name: BroadcastPoints
+          type: broadcast
+          description: "广播聚合数据（服务端主动推送）"
+          response: PointsBroadcast
+          options:
+            trigger_type: event
+            event_name: aggregation.*  # 通配符，匹配所有聚合等级的事件
+            event_buffer_size: 4096
+          comment: |
+            服务端在聚合完成后推送数据，推送消息中包含 aggregation_level 字段。
+            客户端根据 aggregation_level 字段区分不同等级的数据。
+            支持的事件名称：aggregation.15s, aggregation.1m, aggregation.5m 等
+
+# ============================================
+# 使用说明
+# ============================================
+# 
+# 1. 订阅流程：
+#    客户端 -> 服务端
+#    Topic: points
+#    Path: /subscribe
+#    Data: {"datasource_id": "ds-001", "aggregation_levels": ["15s", "1m"]}
+#
+# 2. 推送流程：
+#    服务端 -> 客户端
+#    Topic: points
+#    Type: broadcast
+#    Data: {
+#      "points": [
+#        {
+#          "datasource_id": "ds-001",
+#          "name": "cpu_usage",
+#          "level": "15s",
+#          "timestamp": 1699999999000,
+#          "aggregation_type": "avg",
+#          "value": 45.5,
+#          "quality": {...},
+#          ...
+#        },
+#        ...
+#      ],
+#      "count": 5
+#    }
+#
+# 3. 取消订阅：
+#    客户端 -> 服务端
+#    Topic: points
+#    Path: /unsubscribe
+#    Data: {"datasource_id": "ds-001", "aggregation_levels": ["15s"]}
+#
+# 注意：
+# - 推荐订阅小级别数据（15s、1m、5m）
+# - 大级别数据（15m、1h、6h、1d）建议使用 HTTP API 查询
+# - 查询接口路径：GET /api/v1/points/query

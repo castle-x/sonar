@@ -1,0 +1,39 @@
+{
+  "version": "2",
+  "ui": {
+    "registry": "github.com/castle-x/wk-ui",
+    "assets": {
+      "components/api-error-dialog": {
+        "version": "1.1.0"
+      },
+      "components/locale-switcher": {
+        "version": "2.0.0"
+      },
+      "components/mode-toggle": {
+        "version": "2.0.0"
+      },
+      "components/theme-provider": {
+        "version": "1.0.0"
+      },
+      "scaffold/dashboard-02": {
+        "version": "1.0.0"
+      },
+      "ui/sub-nav": {
+        "version": "1.0.0"
+      },
+      "ui/use-api-error": {
+        "version": "1.1.0"
+      },
+      "ui/use-locale": {
+        "version": "2.0.0"
+      },
+      "ui/use-theme": {
+        "version": "2.0.0"
+      }
+    }
+  },
+  "api": {
+    "registry": "github.com/castle-x/wk-api",
+    "assets": {}
+  }
+}

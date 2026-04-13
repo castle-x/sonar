@@ -1,0 +1,14 @@
+{
+  "active": false,
+  "phase": "complete",
+  "current_phase": "complete",
+  "reinforcement_count": 21,
+  "completed_at": "2026-04-09T09:00:00.000Z",
+  "session_id": "f5cb60e6-e58d-4248-933c-4abee38f92a1",
+  "_meta": {
+    "mode": "autopilot",
+    "sessionId": "f5cb60e6-e58d-4248-933c-4abee38f92a1",
+    "updatedAt": "2026-04-09T09:10:00.000Z",
+    "updatedBy": "state_write_tool"
+  }
+}

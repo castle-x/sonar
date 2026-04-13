@@ -1,0 +1,22 @@
+{
+  "mode": {
+    "toggle": "切换主题",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "系统"
+  },
+  "accent": {
+    "label": "品牌色",
+    "neutral": "默认",
+    "emerald": "翡翠",
+    "sapphire": "蓝宝石"
+  },
+  "selector": {
+    "title": "选择配色"
+  },
+  "dropdown": {
+    "title": "设置",
+    "language": "语言",
+    "theme": "主题"
+  }
+}
