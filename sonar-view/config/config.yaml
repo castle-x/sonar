@@ -1,0 +1,32 @@
+# sonar-view 配置文件
+
+# 服务监听地址
+addr: ":8283"
+
+# sonar-store 连接配置
+store:
+  addr: "localhost:8082"
+  app_id: ""   # 留空表示聚合所有 app
+
+# 聚合配置
+aggregation:
+  enabled: true
+  collect_timeout: 12s
+  query_delay: 40s
+
+# TSDB 存储配置
+tsdb:
+  data_dir: "data/tsdb"
+  retention_days: 7
+  write_buffer_size: 512
+  max_chunk_size: 536870912  # 512MB
+  block_duration: 2h
+  max_block_duration: 36h
+  compaction_interval: 1h
+  cleanup_interval: 10m
+
+# MongoDB 配置（可选，快照持久化使用）
+mongodb:
+  uri: "mongodb://localhost:27017"
+  db_name: "sonar_view"
+  enable: false
