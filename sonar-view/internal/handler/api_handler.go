@@ -5,10 +5,15 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"sonar-view/internal/repo"
 	"sonar-view/internal/service"
+	"sonar-view/pkg/aggregator"
+	"sonar-view/pkg/storage"
+
+	"github.com/prometheus/prometheus/model/labels"
 )
 
 // HealthHandler 健康检查
@@ -311,6 +316,143 @@ func (h *StoreConfigHandler) Activate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+// AggregationHandler 聚合数据查询（查询 view 本地 TSDB）
+type AggregationHandler struct {
+	tsdb storage.Storage[aggregator.AggregatedPoint]
+}
+
+func NewAggregationHandler(tsdb storage.Storage[aggregator.AggregatedPoint]) *AggregationHandler {
+	return &AggregationHandler{tsdb: tsdb}
+}
+
+// QueryMetrics GET /api/v1/aggregation/metrics
+// Params: app_id, metric_names, start_time, end_time, level, labels
+func (h *AggregationHandler) QueryMetrics(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+
+	startMs, err := strconv.ParseInt(q.Get("start_time"), 10, 64)
+	if err != nil || startMs <= 0 {
+		writeError(w, http.StatusBadRequest, "start_time is required (ms timestamp)")
+		return
+	}
+	endMs, err := strconv.ParseInt(q.Get("end_time"), 10, 64)
+	if err != nil || endMs <= 0 {
+		writeError(w, http.StatusBadRequest, "end_time is required (ms timestamp)")
+		return
+	}
+
+	level := q.Get("level")
+	if level == "" {
+		level = "1m"
+	}
+
+	// Build label matchers
+	builder := labels.NewBuilder(nil)
+	builder.Set(string(aggregator.AggregatedInternalLabelAggregationLevel), level)
+
+	if appID := q.Get("app_id"); appID != "" {
+		builder.Set("app_id", appID)
+	}
+
+	// Parse extra labels: key=value,key2=value2
+	if labelsStr := q.Get("labels"); labelsStr != "" {
+		for _, pair := range strings.Split(labelsStr, ",") {
+			kv := strings.SplitN(strings.TrimSpace(pair), "=", 2)
+			if len(kv) == 2 {
+				builder.Set(kv[0], kv[1])
+			}
+		}
+	}
+
+	lq := &storage.LabelQuery{
+		Labels:    builder.Labels(),
+		StartTime: startMs,
+		EndTime:   endMs,
+	}
+
+	// If specific metric names requested, query each
+	metricNamesStr := q.Get("metric_names")
+	var metricNames []string
+	if metricNamesStr != "" {
+		for _, n := range strings.Split(metricNamesStr, ",") {
+			n = strings.TrimSpace(n)
+			if n != "" {
+				metricNames = append(metricNames, n)
+			}
+		}
+	}
+
+	var allPoints []aggregator.AggregatedPoint
+	if len(metricNames) > 0 {
+		for _, name := range metricNames {
+			query := *lq
+			query.MetricName = name
+			pts, err := h.tsdb.QueryByLabels(r.Context(), &query)
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, "query failed: "+err.Error())
+				return
+			}
+			allPoints = append(allPoints, pts...)
+		}
+	} else {
+		pts, err := h.tsdb.QueryByLabels(r.Context(), lq)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "query failed: "+err.Error())
+			return
+		}
+		allPoints = pts
+	}
+
+	// Group by metric name + labels into response
+	type metricSeries struct {
+		Name   string                 `json:"name"`
+		Labels map[string]string      `json:"labels"`
+		Points []map[string]interface{} `json:"points"`
+	}
+
+	seriesMap := make(map[string]*metricSeries)
+	for _, p := range allPoints {
+		// Build a key from name + business labels
+		businessLabels := make(map[string]string)
+		p.Labels.Range(func(l labels.Label) {
+			businessLabels[l.Name] = l.Value
+		})
+		key := p.Name + "|" + p.DatasourceId + "|" + string(p.AggregationType)
+		for _, lbl := range p.Labels {
+			key += "|" + lbl.Name + "=" + lbl.Value
+		}
+
+		s, ok := seriesMap[key]
+		if !ok {
+			s = &metricSeries{
+				Name:   p.Name,
+				Labels: businessLabels,
+			}
+			if p.DatasourceId != "" {
+				s.Labels["datasource_id"] = p.DatasourceId
+			}
+			s.Labels["aggregation_type"] = string(p.AggregationType)
+			seriesMap[key] = s
+		}
+		s.Points = append(s.Points, map[string]interface{}{
+			"timestamp": p.Timestamp.Time().UnixMilli(),
+			"value":     p.Value,
+		})
+	}
+
+	metrics := make([]*metricSeries, 0, len(seriesMap))
+	for _, s := range seriesMap {
+		metrics = append(metrics, s)
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"metrics":    metrics,
+		"level":      level,
+		"start_time": startMs,
+		"end_time":   endMs,
+	})
 }
 
 // writeJSON writes JSON response

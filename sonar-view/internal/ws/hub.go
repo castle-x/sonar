@@ -17,11 +17,22 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-// Message WebSocket 消息
+// Message WebSocket 消息信封（发送给客户端的格式）
 type Message struct {
-	Topic   string      `json:"topic"`
-	Payload interface{} `json:"payload"`
-	Ts      int64       `json:"ts"`
+	Type      string      `json:"type"`      // "broadcast" | "heartbeat"
+	Topic     string      `json:"topic"`     // "points" | "metric_stream" | "tap_status"
+	Data      interface{} `json:"data"`
+	Timestamp int64       `json:"timestamp"` // ms
+}
+
+// ClientMessage 客户端发来的消息
+type ClientMessage struct {
+	Action string                 `json:"action"` // "subscribe" | "unsubscribe"
+	Topic  string                 `json:"topic"`
+	Params map[string]interface{} `json:"params,omitempty"`
+	// Legacy format support
+	Subscribe   string `json:"subscribe,omitempty"`
+	Unsubscribe string `json:"unsubscribe,omitempty"`
 }
 
 // client 单个连接
@@ -95,11 +106,12 @@ func (h *Hub) Run() {
 }
 
 // PublishEvent 发布事件（实现 aggregator.EventPublisher 接口）
-func (h *Hub) PublishEvent(topic string, payload interface{}) error {
+func (h *Hub) PublishEvent(topic string, data interface{}) error {
 	msg := &Message{
-		Topic:   topic,
-		Payload: payload,
-		Ts:      time.Now().UnixMilli(),
+		Type:      "broadcast",
+		Topic:     topic,
+		Data:      data,
+		Timestamp: time.Now().UnixMilli(),
 	}
 	select {
 	case h.broadcast <- msg:
@@ -109,9 +121,9 @@ func (h *Hub) PublishEvent(topic string, payload interface{}) error {
 	return nil
 }
 
-// Publish 发布消息到特定 topic
-func (h *Hub) Publish(topic string, payload interface{}) {
-	_ = h.PublishEvent(topic, payload)
+// BroadcastTopic 向订阅指定 topic 的客户端广播数据
+func (h *Hub) BroadcastTopic(topic string, data interface{}) {
+	_ = h.PublishEvent(topic, data)
 }
 
 // ServeWS 处理 WebSocket 升级请求
@@ -147,21 +159,33 @@ func (c *client) readPump() {
 		if err != nil {
 			break
 		}
-		// Parse subscription message: {"subscribe": "topic"}
-		var sub struct {
-			Subscribe   string `json:"subscribe"`
-			Unsubscribe string `json:"unsubscribe"`
+		var msg ClientMessage
+		if err := json.Unmarshal(message, &msg); err != nil {
+			continue
 		}
-		if err := json.Unmarshal(message, &sub); err == nil {
-			c.mu.Lock()
-			if sub.Subscribe != "" {
-				c.topics[sub.Subscribe] = true
+		c.mu.Lock()
+		// Support frontend format: {action:"subscribe", topic:"points"}
+		switch msg.Action {
+		case "subscribe":
+			if msg.Topic != "" {
+				c.topics[msg.Topic] = true
+				log.Printf("[DEBUG] ws: client subscribed to topic=%s", msg.Topic)
 			}
-			if sub.Unsubscribe != "" {
-				delete(c.topics, sub.Unsubscribe)
+		case "unsubscribe":
+			if msg.Topic != "" {
+				delete(c.topics, msg.Topic)
+				log.Printf("[DEBUG] ws: client unsubscribed from topic=%s", msg.Topic)
 			}
-			c.mu.Unlock()
+		default:
+			// Legacy format: {subscribe:"topic"} / {unsubscribe:"topic"}
+			if msg.Subscribe != "" {
+				c.topics[msg.Subscribe] = true
+			}
+			if msg.Unsubscribe != "" {
+				delete(c.topics, msg.Unsubscribe)
+			}
 		}
+		c.mu.Unlock()
 	}
 }
 

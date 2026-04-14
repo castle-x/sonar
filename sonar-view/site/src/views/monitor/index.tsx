@@ -38,7 +38,7 @@ export function MonitorPage() {
   };
 
   const activeTapId = paramTapId || selectedTapId;
-  const { data: streamData, status: wsStatus } = useMonitorStream({
+  const { data: streamData, status: wsStatus, lastUpdateAt } = useMonitorStream({
     tapId: activeTapId ?? null,
     granularity,
     enabled: Boolean(activeTapId),
@@ -78,6 +78,11 @@ export function MonitorPage() {
                 value={granularity}
                 onChange={(g) => setGranularity(g as GranularityName)}
               />
+              {lastUpdateAt && (
+                <span className="text-xs text-muted-foreground">
+                  Last update: {new Date(lastUpdateAt).toLocaleTimeString()}
+                </span>
+              )}
               <div className="ml-auto">
                 <WSStatusBadge status={wsStatus} />
               </div>

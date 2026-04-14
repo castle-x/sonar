@@ -94,6 +94,7 @@ func main() {
 	tapHandler := handler.NewTapHandler(storeClient)
 	scoringHandler := handler.NewScoringHandler()
 	storeConfigHandler := handler.NewStoreConfigHandler(storeConfigService)
+	aggHandler := handler.NewAggregationHandler(aggService.GetTSDB())
 
 	// WebSocket handler
 	wsHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -109,6 +110,9 @@ func main() {
 
 	// Metrics (proxy to sonar-store)
 	mux.HandleFunc("POST /api/v1/metrics/query", metricsHandler.QueryMetrics)
+
+	// Aggregation (query view local TSDB)
+	mux.HandleFunc("GET /api/v1/aggregation/metrics", aggHandler.QueryMetrics)
 
 	// Snapshots
 	mux.HandleFunc("GET /api/v1/snapshots", snapshotHandler.ListSnapshots)
