@@ -11,7 +11,7 @@ dev-frontend:
 
 # gve 方式（如果安装了 gve）
 dev:
-	gve dev -p 8283 --vite-port 5173
+	gve dev -p 8283 --vite-port 5174
 
 build: build-web build-backend
 

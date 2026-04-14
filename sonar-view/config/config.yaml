@@ -25,8 +25,13 @@ tsdb:
   compaction_interval: 1h
   cleanup_interval: 10m
 
-# MongoDB 配置（可选，快照持久化使用）
+# MongoDB 配置（已被 SQLite 替代，保留供历史参考）
 mongodb:
   uri: "mongodb://localhost:27017"
   db_name: "sonar_view"
   enable: false
+
+# SQLite 配置（快照持久化使用）
+sqlite:
+  path: "./data/sonar-view.db"
+  enable: true

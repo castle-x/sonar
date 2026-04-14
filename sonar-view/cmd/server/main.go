@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"sonar-view/config"
+	"sonar-view/internal/db"
 	"sonar-view/internal/handler"
+	"sonar-view/internal/repo"
 	"sonar-view/internal/service"
 	"sonar-view/internal/ws"
 )
@@ -35,6 +37,23 @@ func main() {
 		cfg.Addr = addr
 	}
 
+	// Open SQLite database
+	sqlitePath := cfg.SQLite.Path
+	if sqlitePath == "" {
+		sqlitePath = "./data/sonar-view.db"
+	}
+	sqlDB, err := db.Open(sqlitePath)
+	if err != nil {
+		log.Fatalf("[FATAL] open sqlite: %v", err)
+	}
+	defer sqlDB.Close()
+	log.Printf("[INFO] sqlite opened: %s", sqlitePath)
+
+	// Create repos
+	snapshotRepo := repo.NewSnapshotRepo(sqlDB)
+	chunkRepo := repo.NewChunkRepo(sqlDB)
+	storeConfigRepo := repo.NewStoreConfigRepo(sqlDB)
+
 	// Create WebSocket Hub
 	hub := ws.NewHub()
 	go hub.Run()
@@ -52,8 +71,9 @@ func main() {
 	// Create store client
 	storeClient := service.NewStoreClient(cfg.Store.Addr)
 
-	// Create snapshot service
-	snapshotService := service.NewSnapshotService()
+	// Create services
+	snapshotService := service.NewSnapshotService(snapshotRepo, chunkRepo)
+	storeConfigService := service.NewStoreConfigService(storeConfigRepo)
 
 	// Create handlers
 	healthHandler := handler.NewHealthHandler()
@@ -62,6 +82,7 @@ func main() {
 	snapshotHandler := handler.NewSnapshotHandler(snapshotService)
 	tapHandler := handler.NewTapHandler(storeClient)
 	scoringHandler := handler.NewScoringHandler()
+	storeConfigHandler := handler.NewStoreConfigHandler(storeConfigService)
 
 	// WebSocket handler
 	wsHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -83,6 +104,13 @@ func main() {
 	mux.HandleFunc("POST /api/v1/snapshots", snapshotHandler.CreateSnapshot)
 	mux.HandleFunc("GET /api/v1/snapshots/{id}", snapshotHandler.GetSnapshot)
 	mux.HandleFunc("DELETE /api/v1/snapshots/{id}", snapshotHandler.DeleteSnapshot)
+	mux.HandleFunc("GET /api/v1/snapshots/{id}/metrics", snapshotHandler.GetSnapshotMetrics)
+
+	// Store configs
+	mux.HandleFunc("GET /api/v1/store-configs", storeConfigHandler.List)
+	mux.HandleFunc("POST /api/v1/store-configs", storeConfigHandler.Create)
+	mux.HandleFunc("PUT /api/v1/store-configs/{id}", storeConfigHandler.Update)
+	mux.HandleFunc("DELETE /api/v1/store-configs/{id}", storeConfigHandler.Delete)
 
 	// Taps
 	mux.HandleFunc("GET /api/v1/taps", tapHandler.ListTaps)

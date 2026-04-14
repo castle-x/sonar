@@ -9,11 +9,13 @@ import (
 
 // Config sonar-view 配置
 type Config struct {
-	Addr    string          `yaml:"addr" json:"addr"`
-	Store   StoreConfig     `yaml:"store" json:"store"`
-	Aggregation AggConfig   `yaml:"aggregation" json:"aggregation"`
-	TSDB    TSDBConfig      `yaml:"tsdb" json:"tsdb"`
-	MongoDB MongoDBConfig   `yaml:"mongodb" json:"mongodb"`
+	Addr        string        `yaml:"addr" json:"addr"`
+	Store       StoreConfig   `yaml:"store" json:"store"`
+	Aggregation AggConfig     `yaml:"aggregation" json:"aggregation"`
+	TSDB        TSDBConfig    `yaml:"tsdb" json:"tsdb"`
+	// MongoDB 已被 SQLite 替代，保留结构体供历史参考，enable 默认 false
+	MongoDB MongoDBConfig `yaml:"mongodb" json:"mongodb"`
+	SQLite  SQLiteConfig  `yaml:"sqlite" json:"sqlite"`
 }
 
 type StoreConfig struct {
@@ -28,12 +30,12 @@ type AggConfig struct {
 }
 
 type TSDBConfig struct {
-	DataDir         string        `yaml:"data_dir" json:"data_dir"`
-	RetentionDays   int           `yaml:"retention_days" json:"retention_days"`
-	WriteBufferSize int           `yaml:"write_buffer_size" json:"write_buffer_size"`
-	MaxChunkSize    int64         `yaml:"max_chunk_size" json:"max_chunk_size"`
-	BlockDuration   time.Duration `yaml:"block_duration" json:"block_duration"`
-	MaxBlockDuration time.Duration `yaml:"max_block_duration" json:"max_block_duration"`
+	DataDir            string        `yaml:"data_dir" json:"data_dir"`
+	RetentionDays      int           `yaml:"retention_days" json:"retention_days"`
+	WriteBufferSize    int           `yaml:"write_buffer_size" json:"write_buffer_size"`
+	MaxChunkSize       int64         `yaml:"max_chunk_size" json:"max_chunk_size"`
+	BlockDuration      time.Duration `yaml:"block_duration" json:"block_duration"`
+	MaxBlockDuration   time.Duration `yaml:"max_block_duration" json:"max_block_duration"`
 	CompactionInterval time.Duration `yaml:"compaction_interval" json:"compaction_interval"`
 	CleanupInterval    time.Duration `yaml:"cleanup_interval" json:"cleanup_interval"`
 }
@@ -42,6 +44,12 @@ type MongoDBConfig struct {
 	URI    string `yaml:"uri" json:"uri"`
 	DBName string `yaml:"db_name" json:"db_name"`
 	Enable bool   `yaml:"enable" json:"enable"`
+}
+
+// SQLiteConfig SQLite 存储配置（替代 MongoDB 用于快照持久化）
+type SQLiteConfig struct {
+	Path   string `yaml:"path"`
+	Enable bool   `yaml:"enable"`
 }
 
 // Load 从文件加载配置
@@ -67,6 +75,8 @@ func Load(path string) (*Config, error) {
 	v.SetDefault("mongodb.uri", "mongodb://localhost:27017")
 	v.SetDefault("mongodb.db_name", "sonar_view")
 	v.SetDefault("mongodb.enable", false)
+	v.SetDefault("sqlite.path", "./data/sonar-view.db")
+	v.SetDefault("sqlite.enable", true)
 	if err := v.ReadInConfig(); err != nil {
 		// config file optional
 		fmt.Printf("[WARN] config: read config file failed: %v, using defaults\n", err)
@@ -105,6 +115,10 @@ func DefaultConfig() *Config {
 			URI:    "mongodb://localhost:27017",
 			DBName: "sonar_view",
 			Enable: false,
+		},
+		SQLite: SQLiteConfig{
+			Path:   "./data/sonar-view.db",
+			Enable: true,
 		},
 	}
 }

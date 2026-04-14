@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"sonar-view/internal/repo"
 	"sonar-view/internal/service"
 )
 
@@ -25,16 +26,10 @@ func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
 }
 
 // StatusHandler 系统状态
-type StatusHandler struct {
-	hub *hubStats
-}
-
-type hubStats struct {
-	Count int
-}
+type StatusHandler struct{}
 
 func NewStatusHandler() *StatusHandler {
-	return &StatusHandler{hub: &hubStats{}}
+	return &StatusHandler{}
 }
 
 func (h *StatusHandler) Status(w http.ResponseWriter, r *http.Request) {
@@ -109,6 +104,23 @@ func (h *SnapshotHandler) DeleteSnapshot(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+// GetSnapshotMetrics 返回快照时序数据
+func (h *SnapshotHandler) GetSnapshotMetrics(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "id is required")
+		return
+	}
+	data, err := h.snapshotService.GetSnapshotMetrics(r.Context(), id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
 
 // TapHandler tap 管理
@@ -208,6 +220,84 @@ func NewScoringHandler() *ScoringHandler { return &ScoringHandler{} }
 func (h *ScoringHandler) ListTemplates(w http.ResponseWriter, r *http.Request) {
 	_ = strconv.Itoa(0) // keep strconv import
 	writeJSON(w, http.StatusOK, map[string]interface{}{"list": []interface{}{}, "total": 0})
+}
+
+// StoreConfigHandler store 配置管理
+type StoreConfigHandler struct {
+	svc *service.StoreConfigService
+}
+
+func NewStoreConfigHandler(svc *service.StoreConfigService) *StoreConfigHandler {
+	return &StoreConfigHandler{svc: svc}
+}
+
+func (h *StoreConfigHandler) List(w http.ResponseWriter, r *http.Request) {
+	list, err := h.svc.List(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if list == nil {
+		list = []*repo.StoreConfig{}
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{"list": list, "total": len(list)})
+}
+
+func (h *StoreConfigHandler) Create(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Name        string `json:"name"`
+		Addr        string `json:"addr"`
+		Description string `json:"description"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request: "+err.Error())
+		return
+	}
+	if body.Name == "" || body.Addr == "" {
+		writeError(w, http.StatusBadRequest, "name and addr are required")
+		return
+	}
+	cfg, err := h.svc.Create(r.Context(), body.Name, body.Addr, body.Description)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusCreated, cfg)
+}
+
+func (h *StoreConfigHandler) Update(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "id is required")
+		return
+	}
+	var body struct {
+		Name        string `json:"name"`
+		Addr        string `json:"addr"`
+		Description string `json:"description"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request: "+err.Error())
+		return
+	}
+	if err := h.svc.Update(r.Context(), id, body.Name, body.Addr, body.Description); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func (h *StoreConfigHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "id is required")
+		return
+	}
+	if err := h.svc.Delete(r.Context(), id); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 // writeJSON writes JSON response
