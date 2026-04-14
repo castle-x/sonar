@@ -27,6 +27,45 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Thrift IDL 编写规范详见 `/gve` skill 的 `thrift-spec.md`。
 
+### 何时必须遵循 GVE API 规范
+
+以下情况**必须**先写 Thrift IDL，再用 `gve api generate` 生成代码，**禁止**手写 API struct 和客户端：
+
+| 场景 | 要求 |
+|------|------|
+| **新增 HTTP API 端点** | 先在 `api/{project}/{resource}/v1/{resource}.thrift` 定义 Request/Response struct + Service |
+| **修改已有 API 的请求/响应结构** | 修改对应 `.thrift` 文件，重新 `gve api generate` |
+| **前端调用后端 API** | 使用 `site/src/api/{project}/{resource}/v1/client.ts`（生成产物），禁止手写 fetch |
+| **GVE 项目**（`sonar-tap`、`sonar-view`） | 所有 API 均需 IDL 驱动，`gve.lock` 中 `api.assets` 不得为空 |
+
+**不需要** Thrift 的场景：
+- `sonar-store`（纯 Go 服务，无前端）：API 用 Go struct 直接定义即可
+- 内部 service/repo 层接口（不对外暴露的内部调用）
+- WebSocket 消息格式（走 JSON，单独维护 TS 类型）
+
+### GVE API 开发工作流
+
+```bash
+# 1. 定义或修改契约
+vim api/sonar-view/{resource}/v1/{resource}.thrift
+
+# 2. 生成 Go + TS 代码
+cd sonar-view && gve api generate
+
+# 3. 在 handler 中使用生成的 Go struct
+#    import "sonar-view/internal/api/sonar-view/{resource}/v1"
+
+# 4. 前端使用生成的 TS client
+#    import { XxxServiceClient } from "@/api/sonar-view/{resource}/v1/client"
+
+# 5. 发布契约到共享仓库（可选）
+gve api push sonar-view/{resource}
+```
+
+> ⚠️ **已知历史遗留问题**：`sonar-view` 早期开发时跳过了 Thrift IDL，直接手写了
+> `internal/handler/api_handler.go` 和 `site/src/lib/api-client.ts`。
+> 需要逐步补写 IDL 并迁移到生成代码。补写顺序：snapshot → store-config → tap → metrics。
+
 ---
 
 ## 构建与运行
