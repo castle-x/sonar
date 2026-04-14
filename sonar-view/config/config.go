@@ -24,32 +24,32 @@ type StoreConfig struct {
 }
 
 type AggConfig struct {
-	Enabled        bool          `yaml:"enabled" json:"enabled"`
-	CollectTimeout time.Duration `yaml:"collect_timeout" json:"collect_timeout"`
-	QueryDelay     time.Duration `yaml:"query_delay" json:"query_delay"`
+	Enabled        bool          `yaml:"enabled" json:"enabled" mapstructure:"enabled"`
+	CollectTimeout time.Duration `yaml:"collect_timeout" json:"collect_timeout" mapstructure:"collect_timeout"`
+	QueryDelay     time.Duration `yaml:"query_delay" json:"query_delay" mapstructure:"query_delay"`
 }
 
 type TSDBConfig struct {
-	DataDir            string        `yaml:"data_dir" json:"data_dir"`
-	RetentionDays      int           `yaml:"retention_days" json:"retention_days"`
-	WriteBufferSize    int           `yaml:"write_buffer_size" json:"write_buffer_size"`
-	MaxChunkSize       int64         `yaml:"max_chunk_size" json:"max_chunk_size"`
-	BlockDuration      time.Duration `yaml:"block_duration" json:"block_duration"`
-	MaxBlockDuration   time.Duration `yaml:"max_block_duration" json:"max_block_duration"`
-	CompactionInterval time.Duration `yaml:"compaction_interval" json:"compaction_interval"`
-	CleanupInterval    time.Duration `yaml:"cleanup_interval" json:"cleanup_interval"`
+	DataDir            string        `yaml:"data_dir" json:"data_dir" mapstructure:"data_dir"`
+	RetentionDays      int           `yaml:"retention_days" json:"retention_days" mapstructure:"retention_days"`
+	WriteBufferSize    int           `yaml:"write_buffer_size" json:"write_buffer_size" mapstructure:"write_buffer_size"`
+	MaxChunkSize       int64         `yaml:"max_chunk_size" json:"max_chunk_size" mapstructure:"max_chunk_size"`
+	BlockDuration      time.Duration `yaml:"block_duration" json:"block_duration" mapstructure:"block_duration"`
+	MaxBlockDuration   time.Duration `yaml:"max_block_duration" json:"max_block_duration" mapstructure:"max_block_duration"`
+	CompactionInterval time.Duration `yaml:"compaction_interval" json:"compaction_interval" mapstructure:"compaction_interval"`
+	CleanupInterval    time.Duration `yaml:"cleanup_interval" json:"cleanup_interval" mapstructure:"cleanup_interval"`
 }
 
 type MongoDBConfig struct {
-	URI    string `yaml:"uri" json:"uri"`
-	DBName string `yaml:"db_name" json:"db_name"`
-	Enable bool   `yaml:"enable" json:"enable"`
+	URI    string `yaml:"uri" json:"uri" mapstructure:"uri"`
+	DBName string `yaml:"db_name" json:"db_name" mapstructure:"db_name"`
+	Enable bool   `yaml:"enable" json:"enable" mapstructure:"enable"`
 }
 
 // SQLiteConfig SQLite 存储配置（替代 MongoDB 用于快照持久化）
 type SQLiteConfig struct {
-	Path   string `yaml:"path"`
-	Enable bool   `yaml:"enable"`
+	Path   string `yaml:"path" mapstructure:"path"`
+	Enable bool   `yaml:"enable" mapstructure:"enable"`
 }
 
 // Load 从文件加载配置
