@@ -5,26 +5,82 @@
     "logout": "退出登录"
   },
   "nav": {
-    "home": "Home",
+    "monitor": "监控",
+    "snapshots": "快照",
+    "taps": "采集器",
     "settings": "设置"
   },
   "pages": {
-    "home": {
-      "title": "首页",
-      "description": "欢迎使用 {{name}}，这是你的仪表盘首页。",
-      "sayHello": {
-        "title": "Say Hello API",
-        "description": "通过发送问候请求来测试 API 连接。",
-        "send": "发送",
-        "loading": "发送中...",
-        "placeholder": "输入你的名字"
+    "monitor": {
+      "title": "实时监控",
+      "noTap": "请选择一个 Tap 实例",
+      "noTapDesc": "在左侧选择一个 Tap 实例开始监控",
+      "wsStatus": {
+        "connected": "已连接",
+        "connecting": "连接中...",
+        "disconnected": "已断开",
+        "error": "连接错误"
+      },
+      "granularity": "时间粒度",
+      "lastUpdate": "最后更新"
+    },
+    "snapshots": {
+      "title": "快照",
+      "description": "管理压测快照与评分",
+      "create": "创建快照",
+      "empty": "暂无快照",
+      "emptyDesc": "点击「创建快照」开始记录压测数据",
+      "deleteConfirm": "确认删除该快照吗？此操作不可撤销。",
+      "viewDetail": "查看详情",
+      "score": "评分",
+      "duration": "时长",
+      "status": {
+        "creating": "创建中",
+        "ready": "就绪",
+        "failed": "失败"
+      },
+      "grade": {
+        "A": "优秀",
+        "B": "良好",
+        "C": "一般",
+        "D": "较差",
+        "F": "不合格"
       }
+    },
+    "snapshotDetail": {
+      "title": "快照详情",
+      "back": "返回列表",
+      "metrics": "指标图表",
+      "scoreBreakdown": "评分详情",
+      "noData": "暂无数据",
+      "totalScore": "总分",
+      "metricName": "指标",
+      "weight": "权重",
+      "rawValue": "原始值",
+      "metricScore": "指标分",
+      "weightedScore": "加权分"
+    },
+    "taps": {
+      "title": "采集器管理",
+      "description": "管理已注册的 Tap 采集器实例",
+      "empty": "暂无 Tap 实例",
+      "emptyDesc": "请在设置中配置 sonar-view 连接后刷新",
+      "status": {
+        "up": "在线",
+        "down": "离线",
+        "unknown": "未知"
+      },
+      "lastScrape": "最后上报",
+      "instance": "地址"
     },
     "settings": {
       "title": "设置",
-      "description": "应用设置功能即将推出。",
-      "comingSoon": "即将推出",
-      "comingSoonDescription": "设置功能正在开发中，敬请期待。"
+      "description": "配置 sonar-view 连接",
+      "serverUrl": "服务器地址",
+      "serverUrlDesc": "sonar-view 后端地址（默认 http://localhost:8283）",
+      "save": "保存",
+      "saved": "已保存",
+      "connectedTaps": "已连接的 Tap 实例"
     }
   }
 }

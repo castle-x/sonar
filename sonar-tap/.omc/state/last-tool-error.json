@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"\\nTAP_RESPONSE=$(curl -s http://localhost:8082/apis/v1/taps)\\n\\necho \\\"Full response structure:\\\"\\necho \\\"$TAP_RESPONSE\\\" | jq 'keys'\\n\\necho \\\"\\\"\\necho \\\"Response:\\\"\\necho \\\"$TAP_RESPONSE...",
-  "error": "Exit code 5\nFull response structure:\n[\n  \"code\",\n  \"data\",\n  \"message\"\n]\n\nResponse:\n{\n  \"code\": 0,\n  \"message\": \"success\",\n  \"data\": {\n    \"taps\": [\n      {\n        \"id\": \"82e0bcfdb0521613\",\n        \"app_id\": \"sonar-tap-e2e-test\",\n        \"instance\": \"192.168.71.200:9090\",\n        \"labels\": {\n          \"env\": \"e2e-test\",\n          \"host\": \"CASTLEXU-MB0\",\n          \"ip\": \"192.168.71.200\",\n          \"os\": \"darwin\"\n        },\n        \"state\": 1,\n        \"last_scrape\": 1776086310,\n        \"first_scr...",
-  "timestamp": "2026-04-13T13:18:33.377Z",
-  "retry_count": 1
-}

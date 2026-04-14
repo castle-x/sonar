@@ -3,9 +3,7 @@ package collector
 import (
 	"fmt"
 	"math"
-	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"sonar-tap/pkg/process"
@@ -19,13 +17,11 @@ var logger = ablog.NewLogger("cpuCollector")
 
 /*
 	1. 机器cpu使用率
-	2. 进程cpu使用率
+	2. 进程cpu使用率（Fix Bug#4-A: 使用 gopsutil Times() 跨平台，移除 /proc 依赖）
 	3. 单核cpu使用率
 */
 
-type CPUCollector struct {
-	systemHz float64 // 系统HZ值，缓存避免重复读取
-}
+type CPUCollector struct{}
 
 func NewCPUCollector() Collector {
 	return &CPUCollector{}
@@ -38,7 +34,6 @@ func (c *CPUCollector) CollectNode() ([]NodeMetric, error) {
 		return nil, err
 	}
 	metrics = append(metrics, machineData...)
-
 	coreData, err := c.collectCoreCPU()
 	if err != nil {
 		return nil, err
@@ -47,8 +42,8 @@ func (c *CPUCollector) CollectNode() ([]NodeMetric, error) {
 	return metrics, nil
 }
 
-func (c *CPUCollector) CollectProcess(process *process.Process) (map[string]any, error) {
-	return c.collectProcessCPU(process)
+func (c *CPUCollector) CollectProcess(p *process.Process) (map[string]any, error) {
+	return c.collectProcessCPU(p)
 }
 
 func (c *CPUCollector) collectMachineCPU() ([]NodeMetric, error) {
@@ -84,84 +79,53 @@ func (c *CPUCollector) collectCoreCPU() ([]NodeMetric, error) {
 	return metrics, nil
 }
 
-func (c *CPUCollector) collectProcessCPU(process *process.Process) (map[string]any, error) {
+// collectProcessCPU 使用 gopsutil Times() 跨平台采集进程 CPU ratio
+// Fix Bug#4-A: 不再依赖 Linux 专属 /proc/[pid]/stat，macOS/Linux/Windows 均可正常采集
+// Fix Bug#4-B: 指标名从 process_cpu_percent 改为 node_process_cpu_ratio，与 sonar-store 查询名对齐
+func (c *CPUCollector) collectProcessCPU(p *process.Process) (map[string]any, error) {
 	metric := map[string]any{
-		"process_cpu_percent": 0.0,
+		"node_process_cpu_ratio": 0.0,
 	}
-	if process == nil || process.GetProcess() == nil {
+	if p == nil || p.GetProcess() == nil {
 		return nil, fmt.Errorf("process is nil")
 	}
-
-	if !process.IsAlive() {
+	if !p.IsAlive() {
 		return nil, fmt.Errorf("process is not alive")
 	}
 
-	statPath := "/proc/" + strconv.Itoa(int(process.GetPID())) + "/stat"
-	data, err := os.ReadFile(statPath)
+	// gopsutil Times() 在 macOS 通过 proc_pidinfo syscall 实现，Linux 通过 /proc 实现
+	times, err := p.GetProcess().Times()
 	if err != nil {
-		logger.Warn("read stat file error: %v", err)
+		logger.Warn("get process cpu times error: %v", err)
 		return metric, nil
 	}
-
-	fields := strings.Fields(string(data))
-	if len(fields) < 17 {
-		logger.Warn("stat file is not valid")
-		return metric, nil
-	}
-
-	utime, err1 := strconv.ParseFloat(fields[13], 64)
-	stime, err2 := strconv.ParseFloat(fields[14], 64)
-
-	if err1 != nil || err2 != nil {
-		logger.Warn("parse stat file error: %v", err1)
-		return metric, nil
-	}
-
-	totalTime := utime + stime
+	totalTime := times.User + times.System
 	now := time.Now().UnixNano()
 
-	if process.GetLastCPUTime() == 0 || process.GetLastSampleTime() == 0 {
-		process.SetLastCPUTime(totalTime)
-		process.SetLastSampleTime(now)
-		if c.systemHz == 0 {
-			c.systemHz = getSystemHzFromStat()
-		}
+	// 第一次采集：保存基准值，无法计算差值，返回 0
+	if p.GetLastCPUTime() == 0 || p.GetLastSampleTime() == 0 {
+		p.SetLastCPUTime(totalTime)
+		p.SetLastSampleTime(now)
 		return metric, nil
 	}
 
-	cpuDelta := totalTime - process.GetLastCPUTime()
-	timeDelta := float64(now-process.GetLastSampleTime()) / 1e9
-
+	cpuDelta := totalTime - p.GetLastCPUTime()
+	timeDelta := float64(now-p.GetLastSampleTime()) / 1e9
 	if timeDelta < 0.01 {
 		return metric, nil
 	}
 
-	if timeDelta > 0 && cpuDelta >= 0 {
-		if c.systemHz == 0 {
-			c.systemHz = getSystemHzFromStat()
-		}
-
-		hz := c.systemHz
-		cpuPercent := (cpuDelta / hz) / timeDelta
-
-		process.SetLastCPUTime(totalTime)
-		process.SetLastSampleTime(now)
-
-		if cpuPercent > 10.0 {
-			process.SetLastCPUTime(0)
-			process.SetLastSampleTime(0)
-			logger.Warn("process cpu percent is too high")
-			return metric, nil
-		}
-		metric["process_cpu_percent"] = tools.RoundFloat64(math.Max(0, cpuPercent), 3)
+	cpuRatio := cpuDelta / timeDelta
+	// 异常值保护：超过 10.0（1000% CPU）视为抖动，重置状态
+	if cpuRatio > 10.0 {
+		p.SetLastCPUTime(0)
+		p.SetLastSampleTime(0)
+		logger.Warn("process cpu ratio is too high (%v), reset", cpuRatio)
 		return metric, nil
 	}
-	return metric, nil
-}
 
-// getSystemHzFromStat 获取系统的实际HZ值
-func getSystemHzFromStat() float64 {
-	// 常见的HZ值: 100, 250, 300, 1000
-	// 返回经典的100Hz，这是许多服务器系统的默认值
-	return 100.0
+	p.SetLastCPUTime(totalTime)
+	p.SetLastSampleTime(now)
+	metric["node_process_cpu_ratio"] = tools.RoundFloat64(math.Max(0, cpuRatio), 6)
+	return metric, nil
 }

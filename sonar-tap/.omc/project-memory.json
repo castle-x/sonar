@@ -135,6 +135,31 @@
       "keyFiles": []
     }
   },
-  "hotPaths": [],
+  "hotPaths": [
+    {
+      "path": "site/src/app/App.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1776102285199,
+      "type": "file"
+    },
+    {
+      "path": "site/src/app/styles/globals.css",
+      "accessCount": 2,
+      "lastAccessed": 1776101011578,
+      "type": "file"
+    },
+    {
+      "path": "site/package.json",
+      "accessCount": 2,
+      "lastAccessed": 1776101011685,
+      "type": "file"
+    },
+    {
+      "path": "pkg/collector/cpu.go",
+      "accessCount": 1,
+      "lastAccessed": 1776087739045,
+      "type": "file"
+    }
+  ],
   "userDirectives": []
 }

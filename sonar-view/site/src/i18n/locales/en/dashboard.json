@@ -5,26 +5,82 @@
     "logout": "Log out"
   },
   "nav": {
-    "home": "Home",
+    "monitor": "Monitor",
+    "snapshots": "Snapshots",
+    "taps": "Taps",
     "settings": "Settings"
   },
   "pages": {
-    "home": {
-      "title": "Home",
-      "description": "Welcome to {{name}}. This is your dashboard home page.",
-      "sayHello": {
-        "title": "Say Hello API",
-        "description": "Test the API connection by sending a greeting request.",
-        "send": "Send",
-        "loading": "Sending...",
-        "placeholder": "Enter your name"
+    "monitor": {
+      "title": "Monitor",
+      "noTap": "Select a Tap Instance",
+      "noTapDesc": "Choose a tap instance from the sidebar to start monitoring",
+      "wsStatus": {
+        "connected": "Connected",
+        "connecting": "Connecting...",
+        "disconnected": "Disconnected",
+        "error": "Connection Error"
+      },
+      "granularity": "Granularity",
+      "lastUpdate": "Last update"
+    },
+    "snapshots": {
+      "title": "Snapshots",
+      "description": "Manage load test snapshots and scores",
+      "create": "Create Snapshot",
+      "empty": "No Snapshots",
+      "emptyDesc": "Click Create Snapshot to record load test data",
+      "deleteConfirm": "Delete this snapshot? This cannot be undone.",
+      "viewDetail": "View Details",
+      "score": "Score",
+      "duration": "Duration",
+      "status": {
+        "creating": "Creating",
+        "ready": "Ready",
+        "failed": "Failed"
+      },
+      "grade": {
+        "A": "Excellent",
+        "B": "Good",
+        "C": "Average",
+        "D": "Poor",
+        "F": "Failing"
       }
+    },
+    "snapshotDetail": {
+      "title": "Snapshot Detail",
+      "back": "Back to List",
+      "metrics": "Metrics",
+      "scoreBreakdown": "Score Breakdown",
+      "noData": "No data available",
+      "totalScore": "Total Score",
+      "metricName": "Metric",
+      "weight": "Weight",
+      "rawValue": "Raw Value",
+      "metricScore": "Metric Score",
+      "weightedScore": "Weighted"
+    },
+    "taps": {
+      "title": "Tap Instances",
+      "description": "Manage registered tap collector instances",
+      "empty": "No Tap Instances",
+      "emptyDesc": "Configure the sonar-view connection in Settings and refresh",
+      "status": {
+        "up": "Online",
+        "down": "Offline",
+        "unknown": "Unknown"
+      },
+      "lastScrape": "Last Report",
+      "instance": "Address"
     },
     "settings": {
       "title": "Settings",
-      "description": "Application settings coming soon.",
-      "comingSoon": "Coming Soon",
-      "comingSoonDescription": "Settings are under development, stay tuned."
+      "description": "Configure sonar-view connection",
+      "serverUrl": "Server URL",
+      "serverUrlDesc": "sonar-view backend address (default: http://localhost:8283)",
+      "save": "Save",
+      "saved": "Saved",
+      "connectedTaps": "Connected Tap Instances"
     }
   }
 }

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import meta from "../../../meta.json";
+import meta from "@/app.json";
 
 const ACCENT_COLORS = ["neutral", "emerald", "sapphire"] as const;
 

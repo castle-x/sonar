@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { i18n } from "@/i18n";
-import meta from "../../../meta.json";
+import meta from "@/app.json";
 
 export const SUPPORTED_LOCALES = ["zh-CN", "en"] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];

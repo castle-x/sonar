@@ -54,9 +54,9 @@ func (c *MemCollector) CollectNode() ([]NodeMetric, error) {
 
 func (c *MemCollector) CollectProcess(process *process.Process) (map[string]any, error) {
 	metrics := map[string]any{
-		"process_mem_mb":     0.0,
-		"process_uss_mem_mb": 0.0,
-		"process_pss_mem_mb": 0.0,
+		"node_process_mem_rss_mb": 0.0,
+		"node_process_mem_uss_mb": 0.0,
+		"node_process_mem_pss_mb": 0.0,
 	}
 	if process == nil || process.GetProcess() == nil {
 		return metrics, nil
@@ -71,7 +71,7 @@ func (c *MemCollector) CollectProcess(process *process.Process) (map[string]any,
 	} else {
 		physicalMem = float64(memInfo.RSS) / 1024 / 1024 // MB
 	}
-	metrics["process_mem_mb"] = tools.RoundFloat64(physicalMem, 3)
+	metrics["node_process_mem_rss_mb"] = tools.RoundFloat64(physicalMem, 3)
 	// 按间隔获取USS和PSS
 	now := time.Now().Unix()
 	if now-process.GetUSSLastUpdate() >= int64(process.GetUSSInterval()) {
@@ -87,8 +87,8 @@ func (c *MemCollector) CollectProcess(process *process.Process) (map[string]any,
 		process.SetUSSLastUpdate(now)
 		process.SetPSSLastUpdate(now)
 	}
-	metrics["process_uss_mem_mb"] = tools.RoundFloat64(process.GetUSSLastValue(), 3)
-	metrics["process_pss_mem_mb"] = tools.RoundFloat64(process.GetPSSLastValue(), 3)
+	metrics["node_process_mem_uss_mb"] = tools.RoundFloat64(process.GetUSSLastValue(), 3)
+	metrics["node_process_mem_pss_mb"] = tools.RoundFloat64(process.GetPSSLastValue(), 3)
 	return metrics, nil
 }
 

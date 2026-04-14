@@ -1,4 +1,9 @@
-import { Home01Icon, Settings01Icon } from "@hugeicons/core-free-icons";
+import {
+  Camera01Icon,
+  ComputerIcon,
+  Settings01Icon,
+  ServerStack01Icon,
+} from "@hugeicons/core-free-icons";
 import type { IconSvgElement } from "@hugeicons/react";
 
 // ---------------------------------------------------------------------------
@@ -47,7 +52,33 @@ const navSections: NavSection[] = [
   {
     key: "main",
     items: [
-      { type: "link", key: "home", icon: Home01Icon, titleKey: "nav.home", path: "home" },
+      {
+        type: "link",
+        key: "monitor",
+        icon: ComputerIcon,
+        titleKey: "nav.monitor",
+        path: "monitor",
+      },
+      {
+        type: "link",
+        key: "snapshots",
+        icon: Camera01Icon,
+        titleKey: "nav.snapshots",
+        path: "snapshots",
+      },
+      {
+        type: "link",
+        key: "taps",
+        icon: ServerStack01Icon,
+        titleKey: "nav.taps",
+        path: "taps",
+      },
+    ],
+  },
+  {
+    key: "bottom",
+    className: "mt-auto",
+    items: [
       {
         type: "link",
         key: "settings",
@@ -78,7 +109,7 @@ function getPageTitleKey(sections: NavSection[], pathname: string): string {
       }
     }
   }
-  return "nav.home";
+  return "nav.monitor";
 }
 
 export { getPageTitleKey, navSections };

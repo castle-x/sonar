@@ -321,3 +321,122 @@ Phase 3: sonar-view（基于 monitor_hub/ 业务逻辑）
 - exporter 热更新目前只对 `log_config` 生效；`node_exporter` / `process_exporter` 的规则变更需重启
 - `debug/match_process` 在非 root 用户下 `cmdline` 字段返回空（/proc 权限限制）
 - datasource 和 monitor_hub 待按 GVE 规范重写为 sonar-store 和 sonar-view
+
+---
+
+## 文档管理规范
+
+### 目录结构
+
+```
+sonar/
+├── docs/                          # 项目级文档（统一归档）
+│   ├── design/                    # 设计方案（保留最新）
+│   │   └── sonar-view/            #   sonar-view 设计文档
+│   │       ├── MASTER_DESIGN.md   #   主设计方案（权威）
+│   │       ├── backend_design.md
+│   │       └── frontend_design.md
+│   ├── test/                      # 测试用例（保留最新）
+│   │   ├── e2e/                   #   端到端测试
+│   │   │   ├── SOP.md             #   标准测试流程（权威）
+│   │   │   ├── TEST_CASES.md      #   测试用例集（权威）
+│   │   │   └── E2E_TEST_REPORT_YYYYMMDD.md  # 历次测试报告（带日期）
+│   │   └── sonar-view/            #   sonar-view 单元/集成测试用例
+│   └── archive/                   # 归档（历史产物，只读参考）
+│       ├── agent-artifacts/       #   子 agent 探索/分析产物
+│       ├── sonar-tap/             #   sonar-tap 历史文档
+│       ├── sonar-view-process/    #   sonar-view 开发过程文档
+│       └── ...
+└── test/
+    └── e2e/                       # 端到端测试脚本 + 配置
+        ├── SOP.md                 # → 同步自 docs/test/e2e/SOP.md
+        ├── TEST_CASES.md          # → 同步自 docs/test/e2e/TEST_CASES.md
+        ├── E2E_TEST_REPORT.md     # 最新一次测试报告（不带日期，覆盖）
+        ├── mock_gameserver.go     # 测试辅助程序
+        ├── tap-config-e2e.yaml    # 测试专用配置
+        └── archive/               # 历史报告 + 调查文档
+```
+
+### 文档分类规则
+
+| 类型 | 放置位置 | 处理规则 |
+|------|---------|---------|
+| **设计方案**（MASTER_DESIGN、backend/frontend_design） | `docs/design/{project}/` | 保留最新版，历史版本 Git 历史可查，无需单独归档 |
+| **测试用例**（TEST_CASES、SOP） | `docs/test/` + `test/e2e/` 同步 | 持续更新覆盖，不归档 |
+| **测试报告**（TEST_REPORT） | `test/e2e/E2E_TEST_REPORT.md`（最新）+ `docs/test/e2e/E2E_TEST_REPORT_YYYYMMDD.md`（历史） | 每次测试覆盖最新，同时在 docs 保留带日期副本 |
+| **子 agent 分析/探索产物**（EXPLORATION、ANALYSIS、INVENTORY 等） | `docs/archive/agent-artifacts/` | 完成任务后立即归档，不留在项目根目录 |
+| **开发过程文档**（research、bugs、wave2 报告等） | `docs/archive/{project}-process/` | 开发阶段完成后归档 |
+| **Bug 调查报告**（BUG*_INVESTIGATION） | `docs/archive/{project}-process/` 或 `test/e2e/archive/` | 问题修复后归档 |
+| **README / AGENTS.md / CLAUDE.md** | 项目根目录 | 永久保留，持续更新 |
+
+### 执行过程产物处理规则
+
+**子 agent 工作产物**（由 AI agent 自动生成的分析、探索、报告文档）：
+- 命名特征：`*_ANALYSIS.md`、`*_EXPLORATION.md`、`*_INVENTORY.md`、`*_SUMMARY.md`（泛化探索类）
+- 任务完成后移入 `docs/archive/agent-artifacts/`
+- **禁止**将 agent 产物留在项目根目录超过一个工作周期
+
+**开发阶段文档**（由 team 协作开发产生）：
+- 命名特征：`research_*.md`、`*_bugs.md`、`WAVE*_*.md`、`MIGRATION_*.md`
+- 功能上线后移入 `docs/archive/{project}-process/`
+
+### 测试流程规范
+
+#### E2E 测试标准流程（SOP）
+
+完整 SOP 见 `docs/test/e2e/SOP.md`，核心步骤：
+
+```
+1. 准备阶段
+   ├── 构建所有 binary（sonar-tap、sonar-store、mock_gameserver）
+   ├── 准备测试配置文件（tap-config-e2e.yaml）
+   └── 确认服务端口未占用（9090、8082）
+
+2. 启动阶段
+   ├── 启动 sonar-store（端口 8082）
+   ├── 启动 sonar-tap（带测试配置，端口 9090）
+   └── 启动 mock_gameserver（模拟目标进程 + 日志产生）
+
+3. 验证阶段
+   ├── 检查 tap 注册到 store（GET /apis/v1/tapinstances）
+   ├── 等待数据上报（≥3 个采集周期）
+   ├── 查询 store 指标数据（GET /apis/v1/metrics/query）
+   └── 验证指标命名、标签、数值范围
+
+4. 清理阶段
+   ├── 停止所有进程
+   ├── 记录测试报告到 test/e2e/E2E_TEST_REPORT.md
+   └── 带日期备份到 docs/test/e2e/E2E_TEST_REPORT_YYYYMMDD.md
+```
+
+#### 测试报告格式
+
+每次 E2E 测试完成后在 `test/e2e/E2E_TEST_REPORT.md` 记录：
+
+```markdown
+# E2E 测试报告 YYYY-MM-DD
+
+## 测试环境
+- OS: ...
+- sonar-tap version / commit: ...
+- sonar-store version / commit: ...
+
+## 测试结果摘要
+| 测试项 | 状态 | 备注 |
+|--------|------|------|
+| tap→store 指标上报 | ✅/❌ | ... |
+| 进程发现 | ✅/❌ | ... |
+| 日志指标采集 | ✅/❌ | ... |
+
+## 发现的问题
+（列出 Bug ID + 简述）
+
+## 结论
+```
+
+#### 新功能测试要求
+
+每个新功能/模块开发完成后：
+1. 在 `docs/test/{project}/` 补充对应测试用例（格式参考 `TEST_CASES.md`）
+2. 执行测试并更新 `E2E_TEST_REPORT.md`
+3. 如发现 Bug，在 `test/e2e/archive/` 创建 `BUG{N}_INVESTIGATION.md` 记录调查过程
