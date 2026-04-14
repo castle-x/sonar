@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
 import type { MetricPoint, SnapshotDetail, SnapshotMeta, TapInstance } from "@/shared/types";
+import type { StoreConfig } from "@/api/sonar-view/store-config/v1/types";
 
 // ── Taps ──────────────────────────────────────────────────────────────────────
 
@@ -115,6 +116,55 @@ export function useDeleteSnapshot() {
     mutationFn: (id: string) => api.delete<void>(`/api/v1/snapshots/${id}`),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.snapshots.all() });
+    },
+  });
+}
+
+// ── StoreConfigs ──────────────────────────────────────────────────────────────
+
+interface StoreConfigListResponse {
+  code: number;
+  data: { list: StoreConfig[]; total: number };
+}
+
+export function useStoreConfigs() {
+  return useQuery({
+    queryKey: queryKeys.storeConfigs.all(),
+    queryFn: async () => {
+      const resp = await api.get<StoreConfigListResponse>("/api/v1/store-configs");
+      return resp.data?.list ?? [];
+    },
+    placeholderData: [],
+  });
+}
+
+export function useCreateStoreConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { name: string; addr: string; description?: string }) =>
+      api.post("/api/v1/store-configs", input),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.storeConfigs.all() });
+    },
+  });
+}
+
+export function useActivateStoreConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.post(`/api/v1/store-configs/${id}/activate`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.storeConfigs.all() });
+    },
+  });
+}
+
+export function useDeleteStoreConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/api/v1/store-configs/${id}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.storeConfigs.all() });
     },
   });
 }

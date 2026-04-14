@@ -5,6 +5,8 @@ export interface StoreConfig {
   name: string;
   addr: string;
   description?: string;
+  is_active: boolean;
+  mark_deleted: boolean;
   created_at: number;
   updated_at: number;
 }

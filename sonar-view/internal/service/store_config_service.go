@@ -59,3 +59,11 @@ func (s *StoreConfigService) Update(ctx context.Context, id, name, addr, desc st
 func (s *StoreConfigService) Delete(ctx context.Context, id string) error {
 	return s.repo.Delete(ctx, id)
 }
+
+func (s *StoreConfigService) SetActive(ctx context.Context, id string) error {
+	return s.repo.SetActive(ctx, id)
+}
+
+func (s *StoreConfigService) GetActive(ctx context.Context) (*repo.StoreConfig, error) {
+	return s.repo.GetActive(ctx)
+}

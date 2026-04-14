@@ -26,8 +26,19 @@ func Open(path string) (*sql.DB, error) {
 }
 
 func initSchema(db *sql.DB) error {
-	_, err := db.Exec(schema)
-	return err
+	if _, err := db.Exec(schema); err != nil {
+		return err
+	}
+	return migrate(db)
+}
+
+// migrate 处理增量 schema 变更（ALTER TABLE 等）
+func migrate(db *sql.DB) error {
+	// 给 store_configs 加 is_active 列（旧库升级）
+	_, _ = db.Exec(`ALTER TABLE store_configs ADD COLUMN is_active INTEGER DEFAULT 0`)
+	// 确保索引存在
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_store_configs_active ON store_configs(is_active, mark_deleted)`)
+	return nil
 }
 
 const schema = `
@@ -71,6 +82,7 @@ CREATE TABLE IF NOT EXISTS store_configs (
     name         TEXT NOT NULL,
     addr         TEXT NOT NULL,
     description  TEXT,
+    is_active    INTEGER DEFAULT 0,
     mark_deleted INTEGER DEFAULT 0,
     created_at   INTEGER NOT NULL,
     updated_at   INTEGER NOT NULL

@@ -13,4 +13,7 @@ export const queryKeys = {
     aggregated: (tapId: string, granularity: string) =>
       ["metrics", "aggregated", tapId, granularity] as const,
   },
+  storeConfigs: {
+    all: () => ["store-configs"] as const,
+  },
 };

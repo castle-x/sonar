@@ -8,12 +8,15 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"sonar-view/internal/repo"
 )
 
 // StoreClient sonar-store HTTP 客户端
 type StoreClient struct {
-	addr       string
-	httpClient *http.Client
+	repo        *repo.StoreConfigRepo
+	fallbackAddr string
+	httpClient  *http.Client
 }
 
 // TapInfo tap 实例信息
@@ -26,13 +29,26 @@ type TapInfo struct {
 	LastSeen int64             `json:"last_seen"`
 }
 
-func NewStoreClient(addr string) *StoreClient {
+func NewStoreClient(r *repo.StoreConfigRepo, fallbackAddr string) *StoreClient {
 	return &StoreClient{
-		addr: addr,
+		repo:         r,
+		fallbackAddr: fallbackAddr,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
 	}
+}
+
+// activeAddr resolves the current active store address.
+// Falls back to fallbackAddr if no active record exists.
+func (c *StoreClient) activeAddr(ctx context.Context) string {
+	if c.repo != nil {
+		cfg, err := c.repo.GetActive(ctx)
+		if err == nil && cfg != nil && cfg.Addr != "" {
+			return cfg.Addr
+		}
+	}
+	return c.fallbackAddr
 }
 
 func (c *StoreClient) doJSON(ctx context.Context, method, path string, body interface{}) ([]byte, error) {
@@ -44,7 +60,7 @@ func (c *StoreClient) doJSON(ctx context.Context, method, path string, body inte
 		}
 		bodyReader = bytes.NewReader(data)
 	}
-	url := fmt.Sprintf("http://%s%s", c.addr, path)
+	url := fmt.Sprintf("http://%s%s", c.activeAddr(ctx), path)
 	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
@@ -92,7 +108,7 @@ func (c *StoreClient) Health(ctx context.Context) error {
 
 // ProxyPost 代理 POST 请求到 sonar-store
 func (c *StoreClient) ProxyPost(ctx context.Context, path string, body []byte) ([]byte, error) {
-	url := fmt.Sprintf("http://%s%s", c.addr, path)
+	url := fmt.Sprintf("http://%s%s", c.activeAddr(ctx), path)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
@@ -115,7 +131,7 @@ func (c *StoreClient) QueryMetrics(ctx context.Context, appID string, startTime,
 	})
 }
 
-// Addr 返回 store 地址
+// Addr 返回当前 active store 地址（fallback to config）
 func (c *StoreClient) Addr() string {
-	return c.addr
+	return c.activeAddr(context.Background())
 }

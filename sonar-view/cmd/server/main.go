@@ -69,11 +69,22 @@ func main() {
 	defer aggService.Stop()
 
 	// Create store client
-	storeClient := service.NewStoreClient(cfg.Store.Addr)
+	storeClient := service.NewStoreClient(storeConfigRepo, cfg.Store.Addr)
 
 	// Create services
 	snapshotService := service.NewSnapshotService(snapshotRepo, chunkRepo)
 	storeConfigService := service.NewStoreConfigService(storeConfigRepo)
+
+	// Bootstrap: if no store configs exist and config.yaml has a store addr, create default
+	if cfg.Store.Addr != "" {
+		if existing, err := storeConfigRepo.List(context.Background()); err == nil && len(existing) == 0 {
+			created, err := storeConfigService.Create(context.Background(), "default", cfg.Store.Addr, "Auto-created from config")
+			if err == nil {
+				_ = storeConfigRepo.SetActive(context.Background(), created.ID)
+				log.Printf("[INFO] bootstrapped default store config: %s", cfg.Store.Addr)
+			}
+		}
+	}
 
 	// Create handlers
 	healthHandler := handler.NewHealthHandler()
@@ -111,6 +122,7 @@ func main() {
 	mux.HandleFunc("POST /api/v1/store-configs", storeConfigHandler.Create)
 	mux.HandleFunc("PUT /api/v1/store-configs/{id}", storeConfigHandler.Update)
 	mux.HandleFunc("DELETE /api/v1/store-configs/{id}", storeConfigHandler.Delete)
+	mux.HandleFunc("POST /api/v1/store-configs/{id}/activate", storeConfigHandler.Activate)
 
 	// Taps
 	mux.HandleFunc("GET /api/v1/taps", tapHandler.ListTaps)
