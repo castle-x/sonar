@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `sonar/sonar-store/` | **新项目** | 数据存储服务，接收 tap 上报，提供查询接口 | 8082 |
 | `sonar/sonar-view/` | **新项目（GVE）** | 可视化平台 + 实时聚合 + 报告 + 评分 + 远程管理 | 8283 |
 
-> 历史项目已归档到 `legacy/`：`datasource/`、`monitor_hub/`、`node_process_exporter/`、`log_exporter/`、`exporter/`，仅供参考。
+> 历史项目已归档到 `.legacy/`：`datasource/`、`monitor_hub/`、`node_process_exporter/`、`log_exporter/`、`exporter/`，仅供参考。实际路径为 `/sonar/.legacy/monitor_hub/` 等。
 
 ---
 
@@ -73,7 +73,7 @@ gve api push sonar-view/{resource}
 ### exporter（legacy/exporter/，参考代码）
 
 ```bash
-cd legacy/exporter
+cd .legacy/exporter
 go build -o bin/exporter ./cmd/exporter
 ./bin/exporter -c config/config.yaml -a 0.0.0.0:9090
 ```
@@ -81,8 +81,8 @@ go build -o bin/exporter ./cmd/exporter
 ### datasource / monitor_hub（legacy/，仅参考）
 
 ```bash
-cd legacy/datasource && make dev-backend    # localhost:8082
-cd legacy/monitor_hub && make dev-backend   # localhost:8283
+cd .legacy/datasource && make dev-backend    # localhost:8082
+cd .legacy/monitor_hub && make dev-backend   # localhost:8283
 ```
 
 ### Sonar 新项目（GVE 命令）
@@ -96,7 +96,7 @@ cd sonar/sonar-store && go run ./cmd/server/  # store 开发模式
 ### 测试（legacy/datasource，旧版）
 
 ```bash
-cd legacy/datasource
+cd .legacy/datasource
 ./run_tests.sh                                          # 交互菜单
 python3 tests/test_mark_batch.py --duration 60 --qps 10
 ```
@@ -326,10 +326,10 @@ view 前端 → view 后端 → HTTP 转发 → tap:9090/api/v1/*
 
 ### 原则
 
-- **不改旧项目**：`legacy/` 下所有项目仅作参考，不在上面修改
+- **不改旧项目**：`.legacy/` 下所有项目仅作参考，不在上面修改
 - **新建目录，重新开发**：`sonar/sonar-tap/`、`sonar/sonar-store/`、`sonar/sonar-view/` 为全新 GVE 项目
-- **允许复制旧代码**：可将 `legacy/` 下旧项目的模块代码复制到新项目中，按 GVE 规范重新组织
-- **exporter/ 已完成合并**：当前 `legacy/exporter/` 是 node_process_exporter + log_exporter 的合并产物，将作为 `sonar-tap` 的基础
+- **允许复制旧代码**：可将 `.legacy/` 下旧项目的模块代码复制到新项目中，按 GVE 规范重新组织
+- **exporter/ 已完成合并**：当前 `.legacy/exporter/` 是 node_process_exporter + log_exporter 的合并产物，将作为 `sonar-tap` 的基础
 
 ### 重构路径
 
