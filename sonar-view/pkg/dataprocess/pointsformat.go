@@ -2,6 +2,8 @@ package dataprocess
 
 import (
 	"log"
+	"math"
+	"strconv"
 	"time"
 
 	pkgaggregator "sonar-view/pkg/aggregator"
@@ -111,4 +113,128 @@ func CountPoints(data *PointsResponse) int {
 		}
 	}
 	return total
+}
+
+// GenerateSummaryTables creates summary tables from compressed data
+// Generates a summary table for each metric, showing aggregation statistics
+func GenerateSummaryTables(data *PointsResponse) []*SummaryTable {
+	if data == nil || len(data.K) == 0 {
+		return make([]*SummaryTable, 0)
+	}
+
+	tables := make([]*SummaryTable, 0)
+
+	// Process each metric (K contains alternating name and labelstr)
+	for i := 0; i < len(data.K); i += 2 {
+		name := data.K[i]
+		labelstr := data.K[i+1]
+		metricIndex := i / 2
+
+		if metricIndex >= len(data.V) {
+			continue
+		}
+
+		// Create table for this metric
+		table := &SummaryTable{
+			Name:  name,
+			Table: make([][]string, 0),
+		}
+
+		// Add header row: [Metric, Labels, Type, Count, Min, Avg, Max, Last]
+		table.Table = append(table.Table, []string{
+			"Metric", "Labels", "Type", "Count", "Min", "Avg", "Max", "Last",
+		})
+
+		// Collect all aggregation types
+		aggTypeData := data.V[metricIndex]
+		aggTypes := []pkgaggregator.AggregationType{
+			pkgaggregator.AggregationTypeAvg,
+			pkgaggregator.AggregationTypeMin,
+			pkgaggregator.AggregationTypeMax,
+			pkgaggregator.AggregationTypeLast,
+		}
+
+		// Add data row for each aggregation type
+		for typeIdx, aggType := range aggTypes {
+			if typeIdx >= len(aggTypeData) {
+				continue
+			}
+
+			points := aggTypeData[typeIdx]
+			if len(points) == 0 {
+				continue
+			}
+
+			// Calculate statistics
+			min := math.MaxFloat64
+			max := -math.MaxFloat64
+			sum := 0.0
+			var last float64
+
+			for _, point := range points {
+				if point.V < min {
+					min = point.V
+				}
+				if point.V > max {
+					max = point.V
+				}
+				sum += point.V
+				last = point.V
+			}
+
+			avg := sum / float64(len(points))
+
+			// Format values
+			formatFloat := func(v float64) string {
+				if math.IsInf(v, 0) {
+					return "N/A"
+				}
+				return FormatFloat(v)
+			}
+
+			row := []string{
+				name,
+				labelstr,
+				string(aggType),
+				FormatInt(int64(len(points))),
+				formatFloat(min),
+				formatFloat(avg),
+				formatFloat(max),
+				formatFloat(last),
+			}
+
+			table.Table = append(table.Table, row)
+		}
+
+		if len(table.Table) > 1 { // Only add if has data rows
+			tables = append(tables, table)
+		}
+	}
+
+	return tables
+}
+
+// FormatFloat formats a float64 value with 2 decimal places
+func FormatFloat(v float64) string {
+	if math.IsNaN(v) {
+		return "N/A"
+	}
+	if math.IsInf(v, 1) {
+		return "+Inf"
+	}
+	if math.IsInf(v, -1) {
+		return "-Inf"
+	}
+	return formatFloatValue(v)
+}
+
+// formatFloatValue is a helper to format float with appropriate precision
+func formatFloatValue(v float64) string {
+	// Use 2 decimal places for display
+	return strconv.FormatFloat(v, 'f', 2, 64)
+}
+
+// FormatInt formats an int64 value as string
+func FormatInt(v int64) string {
+	return strconv.FormatInt(v, 10)
 }

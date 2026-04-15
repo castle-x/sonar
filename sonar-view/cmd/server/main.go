@@ -58,8 +58,12 @@ func main() {
 	hub := ws.NewHub()
 	go hub.Run()
 
+	// Create services (must come before aggregation service if injected)
+	snapshotService := service.NewSnapshotService(snapshotRepo, chunkRepo)
+	storeConfigService := service.NewStoreConfigService(storeConfigRepo)
+
 	// Create aggregation service
-	aggService, err := service.NewAggregationService(cfg, hub)
+	aggService, err := service.NewAggregationService(cfg, hub, storeConfigService)
 	if err != nil {
 		log.Fatalf("[FATAL] create aggregation service failed: %v", err)
 	}
@@ -71,9 +75,8 @@ func main() {
 	// Create store client
 	storeClient := service.NewStoreClient(storeConfigRepo, cfg.Store.Addr)
 
-	// Create services
-	snapshotService := service.NewSnapshotService(snapshotRepo, chunkRepo)
-	storeConfigService := service.NewStoreConfigService(storeConfigRepo)
+	// Create tap management service
+	tapManagementService := service.NewTapManagementService(storeClient)
 
 	// Bootstrap: if no store configs exist and config.yaml has a store addr, create default
 	if cfg.Store.Addr != "" {
@@ -95,6 +98,11 @@ func main() {
 	scoringHandler := handler.NewScoringHandler()
 	storeConfigHandler := handler.NewStoreConfigHandler(storeConfigService)
 	aggHandler := handler.NewAggregationHandler(aggService.GetTSDB())
+	queryPointsHandler := handler.NewQueryPointsHandler(aggService.GetTSDB())
+
+	// Create report service and handler
+	reportService := service.NewReportService(aggService.GetTSDB(), snapshotRepo, chunkRepo)
+	reportHandler := handler.NewReportHandler(reportService)
 
 	// WebSocket handler
 	wsHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -113,6 +121,11 @@ func main() {
 
 	// Aggregation (query view local TSDB)
 	mux.HandleFunc("GET /api/v1/aggregation/metrics", aggHandler.QueryMetrics)
+	mux.HandleFunc("GET /api/v1/aggregation/points", queryPointsHandler.QueryPoints)
+	mux.HandleFunc("POST /api/v1/aggregation/points/batch", queryPointsHandler.QueryPointsBatch)
+
+	// QueryPoints V2 - monitor_hub compatible compressed format
+	mux.HandleFunc("POST /api/v1/points/query", queryPointsHandler.QueryPointsV2)
 
 	// Snapshots
 	mux.HandleFunc("GET /api/v1/snapshots", snapshotHandler.ListSnapshots)
@@ -134,6 +147,13 @@ func main() {
 
 	// Scoring templates
 	mux.HandleFunc("GET /api/v1/scoring/templates", scoringHandler.ListTemplates)
+
+	// Reports
+	mux.HandleFunc("POST /api/v1/reports/generate", reportHandler.GenerateReport)
+	mux.HandleFunc("GET /api/v1/reports", reportHandler.ListReports)
+	mux.HandleFunc("GET /api/v1/reports/{id}", reportHandler.GetReport)
+	mux.HandleFunc("DELETE /api/v1/reports/{id}", reportHandler.DeleteReport)
+	mux.HandleFunc("GET /api/v1/reports/{id}/export/csv", reportHandler.ExportReportAsCSV)
 
 	// WebSocket
 	mux.HandleFunc("/ws", wsHandler)

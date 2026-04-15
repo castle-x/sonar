@@ -14,14 +14,15 @@ import (
 
 // AggregationService 聚合服务
 type AggregationService struct {
-	manager        *aggregator.Manager
-	tsdb           storage.Storage[aggregator.AggregatedPoint]
-	triggerManager *trigger.TriggerManager
-	cfg            *config.Config
-	startedAt      time.Time
+	manager              *aggregator.Manager
+	tsdb                 storage.Storage[aggregator.AggregatedPoint]
+	triggerManager       *trigger.TriggerManager
+	cfg                  *config.Config
+	storeConfigService   *StoreConfigService
+	startedAt            time.Time
 }
 
-func NewAggregationService(cfg *config.Config, eventPublisher aggregator.EventPublisher) (*AggregationService, error) {
+func NewAggregationService(cfg *config.Config, eventPublisher aggregator.EventPublisher, storeConfigService *StoreConfigService) (*AggregationService, error) {
 	ctx := context.Background()
 
 	// Create trigger manager
@@ -68,16 +69,43 @@ func NewAggregationService(cfg *config.Config, eventPublisher aggregator.EventPu
 	}
 
 	return &AggregationService{
-		manager:        manager,
-		tsdb:           tsdb,
-		triggerManager: tm,
-		cfg:            cfg,
-		startedAt:      time.Now(),
+		manager:            manager,
+		tsdb:               tsdb,
+		triggerManager:     tm,
+		cfg:                cfg,
+		storeConfigService: storeConfigService,
+		startedAt:          time.Now(),
 	}, nil
 }
 
 // Start 启动聚合服务
 func (s *AggregationService) Start() error {
+	ctx := context.Background()
+
+	// Register collectors from store configurations if service is available
+	if s.storeConfigService != nil {
+		configs, err := s.storeConfigService.List(ctx)
+		if err != nil {
+			log.Printf("[WARN] failed to load store configs: %v", err)
+		} else {
+			for _, cfg := range configs {
+				if cfg == nil || cfg.Addr == "" {
+					continue
+				}
+				collectorName := cfg.Name
+				if collectorName == "" {
+					collectorName = cfg.ID
+				}
+				collector := aggregator.NewStoreCollector(cfg.Addr, s.cfg.Store.AppID)
+				if err := s.manager.RegisterCollector(collectorName, collector); err != nil {
+					log.Printf("[WARN] failed to register collector %s: %v", collectorName, err)
+				} else {
+					log.Printf("[INFO] registered collector: %s (%s)", collectorName, cfg.Addr)
+				}
+			}
+		}
+	}
+
 	// Register triggers
 	aggTrigger := aggregator.NewAggregationTrigger(s.manager)
 	cleanupTrigger := aggregator.NewCleanupTrigger(s.manager)

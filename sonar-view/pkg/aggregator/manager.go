@@ -25,6 +25,7 @@ type Manager struct {
 	config          *Config
 	tsdb            storage.Storage[AggregatedPoint]
 	collector       Collector
+	collectors      map[string]Collector
 	eventPublisher  EventPublisher
 	lastAggregation map[string]time.Time
 	mu              sync.RWMutex
@@ -58,6 +59,7 @@ func NewManager(
 		config:          config,
 		tsdb:            tsdb,
 		collector:       collector,
+		collectors:      make(map[string]Collector),
 		lastAggregation: make(map[string]time.Time),
 		minInterval:     config.GetMinInterval(),
 	}
@@ -117,17 +119,53 @@ func (m *Manager) collectAndAggregate(ctx context.Context, level *LevelConfig, t
 	startTime := timestamp.Add(-level.Interval)
 	collectCtx, cancel := context.WithTimeout(ctx, m.config.CollectTimeout)
 	defer cancel()
-	rawPoints, err := m.collector.Collect(collectCtx, startTime, endTime)
-	if err != nil {
-		if collectCtx.Err() == context.DeadlineExceeded {
-			return nil, fmt.Errorf("collect timeout after %v: %w", m.config.CollectTimeout, err)
-		}
-		return nil, fmt.Errorf("collect failed: %w", err)
+
+	// Collect from primary collector and all registered collectors in parallel
+	m.mu.RLock()
+	allCollectors := make(map[string]Collector)
+	allCollectors["default"] = m.collector
+	for name, collector := range m.collectors {
+		allCollectors[name] = collector
 	}
-	if len(rawPoints) == 0 {
+	m.mu.RUnlock()
+
+	// Collect from all sources
+	type collectorResult struct {
+		name   string
+		points []RawMetricPoint
+		err    error
+	}
+	resultCh := make(chan collectorResult, len(allCollectors))
+
+	for name, collector := range allCollectors {
+		go func(collectorName string, col Collector) {
+			pts, err := col.Collect(collectCtx, startTime, endTime)
+			resultCh <- collectorResult{name: collectorName, points: pts, err: err}
+		}(name, collector)
+	}
+
+	// Collect results
+	var allRawPoints []RawMetricPoint
+	for i := 0; i < len(allCollectors); i++ {
+		result := <-resultCh
+		if result.err != nil {
+			if collectCtx.Err() == context.DeadlineExceeded {
+				fmt.Printf("[WARN] aggregator: collect timeout from %s: %v\n", result.name, result.err)
+			} else {
+				fmt.Printf("[WARN] aggregator: collect from %s failed: %v\n", result.name, result.err)
+			}
+			continue
+		}
+		if len(result.points) > 0 {
+			allRawPoints = append(allRawPoints, result.points...)
+		}
+	}
+
+	if len(allRawPoints) == 0 {
 		return nil, nil
 	}
-	aggregated := AggregateRaw(rawPoints, level.Name, timestamp)
+
+	aggregated := AggregateRaw(allRawPoints, level.Name, timestamp)
 	if err := m.tsdb.Write(ctx, aggregated); err != nil {
 		return nil, fmt.Errorf("write failed: %w", err)
 	}
@@ -158,7 +196,9 @@ func (m *Manager) cascadeAggregate(ctx context.Context, level *LevelConfig, time
 		baseExpectedPoints = level.MinPoints
 	}
 	uniqueMetrics := countUniqueMetrics(sourcePoints)
-	expectedCount := baseExpectedPoints * 4 * uniqueMetrics
+	// expectedCount = baseExpectedPoints * numAggTypes * numMetrics
+	// AggregationTypeList has 5 types: avg, min, max, count, last
+	expectedCount := baseExpectedPoints * 5 * uniqueMetrics
 	quality := EvaluateDataQuality(actualCount, expectedCount, level.FallbackMode)
 	if !quality.IsValid() {
 		return nil, nil
@@ -215,4 +255,25 @@ func (m *Manager) CleanupExpiredData(ctx context.Context, now time.Time) error {
 		}
 	}
 	return nil
+}
+
+// RegisterCollector registers an additional collector with the given name
+func (m *Manager) RegisterCollector(name string, collector Collector) error {
+	if name == "" {
+		return fmt.Errorf("collector name cannot be empty")
+	}
+	if collector == nil {
+		return fmt.Errorf("collector cannot be nil")
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.collectors[name] = collector
+	return nil
+}
+
+// UnregisterCollector removes a collector by name
+func (m *Manager) UnregisterCollector(name string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.collectors, name)
 }
