@@ -163,5 +163,10 @@ func (s *AggregationService) GetStatus(ctx context.Context) map[string]interface
 		levels = append(levels, levelInfo)
 	}
 	status["levels"] = levels
+
+	// Collector health statuses
+	collectorStatuses := s.manager.GetCollectorStatuses()
+	status["collectors"] = collectorStatuses
+
 	return status
 }

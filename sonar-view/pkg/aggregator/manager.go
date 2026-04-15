@@ -148,6 +148,7 @@ func (m *Manager) collectAndAggregate(ctx context.Context, level *LevelConfig, t
 	}
 	resultCh := make(chan collectorResult, len(allCollectors))
 
+	now := time.Now()
 	for name, collector := range allCollectors {
 		go func(collectorName string, col Collector) {
 			pts, err := col.Collect(collectCtx, startTime, endTime)
@@ -155,19 +156,32 @@ func (m *Manager) collectAndAggregate(ctx context.Context, level *LevelConfig, t
 		}(name, collector)
 	}
 
-	// Collect results
+	// Collect results and update per-collector status
 	var allRawPoints []RawMetricPoint
 	for i := 0; i < len(allCollectors); i++ {
 		result := <-resultCh
+		m.mu.Lock()
+		st, ok := m.collectorStatus[result.name]
+		if !ok {
+			st = &CollectorStatus{Name: result.name}
+			m.collectorStatus[result.name] = st
+		}
+		st.LastAttempt = now
 		if result.err != nil {
+			st.FailureCount++
+			st.LastError = result.err.Error()
 			if collectCtx.Err() == context.DeadlineExceeded {
 				fmt.Printf("[WARN] aggregator: collect timeout from %s: %v\n", result.name, result.err)
 			} else {
 				fmt.Printf("[WARN] aggregator: collect from %s failed: %v\n", result.name, result.err)
 			}
-			continue
+		} else {
+			st.LastSuccess = now
+			st.LastError = ""
 		}
-		if len(result.points) > 0 {
+		m.mu.Unlock()
+
+		if result.err == nil && len(result.points) > 0 {
 			allRawPoints = append(allRawPoints, result.points...)
 		}
 	}
@@ -279,6 +293,10 @@ func (m *Manager) RegisterCollector(name string, collector Collector) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.collectors[name] = collector
+	// Initialize status entry
+	if _, ok := m.collectorStatus[name]; !ok {
+		m.collectorStatus[name] = &CollectorStatus{Name: name}
+	}
 	return nil
 }
 
@@ -287,4 +305,17 @@ func (m *Manager) UnregisterCollector(name string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	delete(m.collectors, name)
+	delete(m.collectorStatus, name)
+}
+
+// GetCollectorStatuses returns a snapshot of all collector health statuses.
+func (m *Manager) GetCollectorStatuses() []CollectorStatus {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	result := make([]CollectorStatus, 0, 1+len(m.collectorStatus))
+	// Include status for named collectors
+	for _, st := range m.collectorStatus {
+		result = append(result, *st)
+	}
+	return result
 }
