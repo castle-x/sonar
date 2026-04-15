@@ -104,6 +104,9 @@ func main() {
 	reportService := service.NewReportService(aggService.GetTSDB(), snapshotRepo, chunkRepo)
 	reportHandler := handler.NewReportHandler(reportService)
 
+	// Create tap management handler
+	tmHandler := handler.NewTapManagementHandler(tapManagementService)
+
 	// WebSocket handler
 	wsHandler := func(w http.ResponseWriter, r *http.Request) {
 		hub.ServeWS(w, r)
@@ -154,6 +157,15 @@ func main() {
 	mux.HandleFunc("GET /api/v1/reports/{id}", reportHandler.GetReport)
 	mux.HandleFunc("DELETE /api/v1/reports/{id}", reportHandler.DeleteReport)
 	mux.HandleFunc("GET /api/v1/reports/{id}/export/csv", reportHandler.ExportReportAsCSV)
+
+	// Tap management
+	mux.HandleFunc("GET /api/v1/tap-management/config", tmHandler.GetTapConfig)
+	mux.HandleFunc("PUT /api/v1/tap-management/config", tmHandler.UpdateTapConfig)
+	mux.HandleFunc("GET /api/v1/tap-management/status", tmHandler.GetTapStatus)
+	mux.HandleFunc("GET /api/v1/tap-management/status/all", tmHandler.GetAllTapStatus)
+	mux.HandleFunc("POST /api/v1/tap-management/config/reload", tmHandler.ReloadTapConfig)
+	mux.HandleFunc("POST /api/v1/tap-management/debug/regex", tmHandler.DebugTapRegex)
+	mux.HandleFunc("GET /api/v1/tap-management/processes", tmHandler.ListProcesses)
 
 	// WebSocket
 	mux.HandleFunc("/ws", wsHandler)
