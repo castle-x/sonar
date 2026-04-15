@@ -1,0 +1,222 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1776160716975,
+  "projectRoot": "/Users/castlexu/github/sonar/sonar-view",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Go",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "go.mod"
+        ]
+      },
+      {
+        "name": "C/C++",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "Makefile"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "go",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "make build",
+    "testCommand": "make test",
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "api": {
+      "path": "api",
+      "purpose": "API routes",
+      "fileCount": 1,
+      "lastAccessed": 1776160716956,
+      "keyFiles": []
+    },
+    "cmd": {
+      "path": "cmd",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776160716957,
+      "keyFiles": []
+    },
+    "config": {
+      "path": "config",
+      "purpose": "Configuration files",
+      "fileCount": 2,
+      "lastAccessed": 1776160716957,
+      "keyFiles": [
+        "config.go",
+        "config.yaml"
+      ]
+    },
+    "data": {
+      "path": "data",
+      "purpose": "Data files",
+      "fileCount": 3,
+      "lastAccessed": 1776160716957,
+      "keyFiles": [
+        "sonar-view.db",
+        "sonar-view.db-shm",
+        "sonar-view.db-wal"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 2,
+      "lastAccessed": 1776160716958,
+      "keyFiles": [
+        "FINAL_REPORT.md",
+        "MASTER_DESIGN.md"
+      ]
+    },
+    "internal": {
+      "path": "internal",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776160716958,
+      "keyFiles": []
+    },
+    "pkg": {
+      "path": "pkg",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776160716958,
+      "keyFiles": []
+    },
+    "site": {
+      "path": "site",
+      "purpose": null,
+      "fileCount": 12,
+      "lastAccessed": 1776160716958,
+      "keyFiles": [
+        "app.json",
+        "biome.json",
+        "components.json",
+        "embed.go",
+        "index.html"
+      ]
+    },
+    "tmp": {
+      "path": "tmp",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776160716958,
+      "keyFiles": []
+    },
+    "docs/test": {
+      "path": "docs/test",
+      "purpose": "Test files",
+      "fileCount": 2,
+      "lastAccessed": 1776160716959,
+      "keyFiles": [
+        "backend_test_cases.md",
+        "frontend_test_cases.md"
+      ]
+    },
+    "internal/api": {
+      "path": "internal/api",
+      "purpose": "API routes",
+      "fileCount": 0,
+      "lastAccessed": 1776160716959,
+      "keyFiles": []
+    },
+    "pkg/types": {
+      "path": "pkg/types",
+      "purpose": "Type definitions",
+      "fileCount": 0,
+      "lastAccessed": 1776160716960,
+      "keyFiles": []
+    },
+    "site/dist": {
+      "path": "site/dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 1,
+      "lastAccessed": 1776160716960,
+      "keyFiles": [
+        "index.html"
+      ]
+    },
+    "site/node_modules": {
+      "path": "site/node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 2,
+      "lastAccessed": 1776160716960,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "config/config.go",
+      "accessCount": 2,
+      "lastAccessed": 1776160724609,
+      "type": "file"
+    },
+    {
+      "path": "cmd/server/main.go",
+      "accessCount": 2,
+      "lastAccessed": 1776161862716,
+      "type": "file"
+    },
+    {
+      "path": "api/sonar-view/snapshot/v1/snapshot.thrift",
+      "accessCount": 2,
+      "lastAccessed": 1776162368432,
+      "type": "file"
+    },
+    {
+      "path": "internal/repo/snapshot_repo.go",
+      "accessCount": 1,
+      "lastAccessed": 1776160732769,
+      "type": "file"
+    },
+    {
+      "path": "internal/service/store_config_service.go",
+      "accessCount": 1,
+      "lastAccessed": 1776160734739,
+      "type": "file"
+    },
+    {
+      "path": "app.json",
+      "accessCount": 1,
+      "lastAccessed": 1776161763515,
+      "type": "file"
+    },
+    {
+      "path": "internal/handler/api_handler.go",
+      "accessCount": 1,
+      "lastAccessed": 1776161862660,
+      "type": "file"
+    },
+    {
+      "path": "api/sonar-view/store-config/v1/store-config.thrift",
+      "accessCount": 1,
+      "lastAccessed": 1776162374173,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

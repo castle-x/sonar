@@ -21,15 +21,25 @@ type AggregationEvent struct {
 	Count     int
 }
 
+// CollectorStatus tracks per-collector health metrics.
+type CollectorStatus struct {
+	Name         string    `json:"name"`
+	FailureCount int       `json:"failure_count"`
+	LastError    string    `json:"last_error,omitempty"`
+	LastSuccess  time.Time `json:"last_success,omitempty"`
+	LastAttempt  time.Time `json:"last_attempt,omitempty"`
+}
+
 type Manager struct {
-	config          *Config
-	tsdb            storage.Storage[AggregatedPoint]
-	collector       Collector
-	collectors      map[string]Collector
-	eventPublisher  EventPublisher
-	lastAggregation map[string]time.Time
-	mu              sync.RWMutex
-	minInterval     time.Duration
+	config           *Config
+	tsdb             storage.Storage[AggregatedPoint]
+	collector        Collector
+	collectors       map[string]Collector
+	collectorStatus  map[string]*CollectorStatus
+	eventPublisher   EventPublisher
+	lastAggregation  map[string]time.Time
+	mu               sync.RWMutex
+	minInterval      time.Duration
 }
 
 type ManagerOption func(*Manager)
@@ -60,6 +70,7 @@ func NewManager(
 		tsdb:            tsdb,
 		collector:       collector,
 		collectors:      make(map[string]Collector),
+		collectorStatus: make(map[string]*CollectorStatus),
 		lastAggregation: make(map[string]time.Time),
 		minInterval:     config.GetMinInterval(),
 	}
