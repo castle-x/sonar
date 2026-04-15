@@ -77,7 +77,6 @@ func main() {
 
 	// Create tap management service
 	tapManagementService := service.NewTapManagementService(storeClient)
-	tapManagementHandler := handler.NewTapManagementHandler(tapManagementService)
 
 	// Bootstrap: if no store configs exist and config.yaml has a store addr, create default
 	if cfg.Store.Addr != "" {
@@ -149,15 +148,6 @@ func main() {
 	mux.HandleFunc("GET /api/v1/taps", tapHandler.ListTaps)
 	mux.HandleFunc("/api/v1/proxy/taps/{tap_id}/{path...}", tapHandler.ProxyTap)
 
-	// Tap management (remote config/status)
-	mux.HandleFunc("GET /api/v1/tap-management/config", tapManagementHandler.GetTapConfig)
-	mux.HandleFunc("PUT /api/v1/tap-management/config", tapManagementHandler.UpdateTapConfig)
-	mux.HandleFunc("GET /api/v1/tap-management/status", tapManagementHandler.GetTapStatus)
-	mux.HandleFunc("GET /api/v1/tap-management/status/all", tapManagementHandler.GetAllTapStatus)
-	mux.HandleFunc("POST /api/v1/tap-management/reload", tapManagementHandler.ReloadTapConfig)
-	mux.HandleFunc("POST /api/v1/tap-management/debug/regex", tapManagementHandler.DebugTapRegex)
-	mux.HandleFunc("GET /api/v1/tap-management/processes", tapManagementHandler.ListProcesses)
-
 	// Scoring templates
 	mux.HandleFunc("GET /api/v1/scoring/templates", scoringHandler.ListTemplates)
 
@@ -168,7 +158,7 @@ func main() {
 	mux.HandleFunc("DELETE /api/v1/reports/{id}", reportHandler.DeleteReport)
 	mux.HandleFunc("GET /api/v1/reports/{id}/export/csv", reportHandler.ExportReportAsCSV)
 
-	// Tap management
+	// Tap management (remote config/status)
 	mux.HandleFunc("GET /api/v1/tap-management/config", tmHandler.GetTapConfig)
 	mux.HandleFunc("PUT /api/v1/tap-management/config", tmHandler.UpdateTapConfig)
 	mux.HandleFunc("GET /api/v1/tap-management/status", tmHandler.GetTapStatus)
