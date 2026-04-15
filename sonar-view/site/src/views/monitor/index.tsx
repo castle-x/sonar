@@ -1,87 +1,69 @@
-import { useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useMemo } from "react";
 import { motion } from "motion/react";
 import { useQuery } from "@tanstack/react-query";
-import { useTaps } from "@/shared/hooks/use-view-api";
+import { LayoutGrid, Columns2, RefreshCw } from "lucide-react";
+import { useStoreConfigs, useActivateStoreConfig } from "@/shared/hooks/use-view-api";
 import { useMonitorStore } from "@/stores/use-monitor-store";
 import { MonitorSidebar } from "./components/monitor-sidebar";
 import { GranularitySelector } from "./components/granularity-selector";
 import { MetricChartsGrid } from "./components/metric-charts-grid";
+import { Button } from "@/shared/shadcn/button";
 import { queryPoints } from "@/lib/points-api";
 import {
   createCompressedDataIndex,
   getPointsFromIndex,
 } from "@/lib/points-compressed";
-import {
-  findAggregationLevel,
-  calculateQueryTimeWindow,
-} from "@/lib/aggregation-config";
-import type { GranularityName, MetricPoint } from "@/shared/types";
+import type { AggregatedPoint } from "@/lib/points-compressed";
+import { GRANULARITY_CONFIG } from "@/lib/granularity-config";
 
 export function MonitorPage() {
-  const { tapId: paramTapId } = useParams<{ tapId: string }>();
-  const navigate = useNavigate();
+  const { data: storeConfigs = [], isLoading } = useStoreConfigs();
+  const { mutate: activateStore, isPending: isActivating } = useActivateStoreConfig();
 
-  const { data: taps = [], isLoading } = useTaps();
-  const { selectedTapId, setSelectedTapId, granularity, setGranularity } =
+  // Use active store or first store as data source
+  const activeStore = storeConfigs.find((s) => s.is_active) ?? storeConfigs[0];
+
+  const { granularity, setGranularity, legendVisible, gridCols, toggleGridCols } =
     useMonitorStore();
 
-  // Sync URL param → store
-  useEffect(() => {
-    if (paramTapId && paramTapId !== selectedTapId) {
-      setSelectedTapId(paramTapId);
-    } else if (!paramTapId && taps.length > 0 && !selectedTapId) {
-      const firstId = taps[0].id;
-      setSelectedTapId(firstId);
-      void navigate(`/monitor/${firstId}`, { replace: true });
-    }
-  }, [paramTapId, taps, selectedTapId, setSelectedTapId, navigate]);
+  // Look up granularity config
+  const levelCfg = GRANULARITY_CONFIG[granularity];
 
-  const handleSelectTap = (id: string) => {
-    setSelectedTapId(id);
-    void navigate(`/monitor/${id}`);
-  };
-
-  const activeTapId = paramTapId ?? selectedTapId;
-
-  // Map GranularityName → AggregationLevel for interval/retention config
-  const selectedLevel = findAggregationLevel(granularity);
-
-  // ── HTTP polling query (replaces WS points subscription) ─────────────────
-  const { data: compressedIndex, dataUpdatedAt, isError } = useQuery({
-    queryKey: ["points", activeTapId, selectedLevel.name] as const,
+  // ── HTTP polling query ────────────────────────────────────────────────────
+  const {
+    data: compressedIndex,
+    dataUpdatedAt,
+    isError,
+    isFetching,
+    refetch,
+  } = useQuery({
+    queryKey: ["points", activeStore?.id, granularity] as const,
     queryFn: async () => {
-      const { startTime, endTime } = calculateQueryTimeWindow(selectedLevel);
+      const endTime = Date.now() - 40_000; // 40s query delay compensation
+      const startTime = endTime - levelCfg.queryWindowMs;
       const resp = await queryPoints({
-        datasource_id: activeTapId!,
-        levels: [selectedLevel.name],
+        datasource_id: activeStore!.id,
+        levels: [granularity],
         start_time: startTime,
         end_time: endTime,
       });
-      return createCompressedDataIndex(resp.p, activeTapId!, selectedLevel.name);
+      return createCompressedDataIndex(resp.p, activeStore!.id, granularity);
     },
-    refetchInterval: selectedLevel.refreshInterval,
-    enabled: Boolean(activeTapId),
+    refetchInterval: levelCfg.refreshIntervalMs,
+    enabled: Boolean(activeStore?.id),
     // Keep previous data during refetch to avoid chart flicker
     placeholderData: (prev) => prev,
   });
 
-  // ── Convert compressed index → Map<metricName, MetricPoint[]> ─────────────
-  // Only use 'avg' aggregation type for chart display
-  const chartData = useMemo<Map<string, MetricPoint[]>>(() => {
+  // ── Convert compressed index → Map<metricName, AggregatedPoint[]> ────────
+  const chartData = useMemo<Map<string, AggregatedPoint[]>>(() => {
     if (!compressedIndex) return new Map();
 
-    const result = new Map<string, MetricPoint[]>();
+    const result = new Map<string, AggregatedPoint[]>();
     for (const metricName of compressedIndex.metricToIndices.keys()) {
       const allPoints = getPointsFromIndex(compressedIndex, metricName);
-      const avgPoints: MetricPoint[] = allPoints
+      const avgPoints = allPoints
         .filter((p) => p.aggregation_type === "avg")
-        .map((p) => ({
-          name: p.name,
-          value: p.value,
-          timestamp: p.timestamp / 1000, // ms → seconds (MetricPoint uses seconds)
-          labels: p.labels,
-        }))
         .sort((a, b) => a.timestamp - b.timestamp);
 
       if (avgPoints.length > 0) {
@@ -91,34 +73,32 @@ export function MonitorPage() {
     return result;
   }, [compressedIndex]);
 
-  // Find active tap name for display
-  const activeTap = taps.find((t) => t.id === activeTapId);
-
   return (
     <div className="flex h-full min-h-0">
-      {/* Sidebar: tap list */}
+      {/* Sidebar: store list */}
       <MonitorSidebar
-        taps={taps}
+        stores={storeConfigs}
         isLoading={isLoading}
-        selectedTapId={activeTapId ?? null}
-        onSelectTap={handleSelectTap}
+        activeStoreId={activeStore?.id ?? null}
+        onActivate={(id) => activateStore(id)}
+        isActivating={isActivating}
       />
 
       {/* Main content */}
       <div className="flex min-h-0 flex-1 flex-col overflow-auto">
-        {!activeTapId ? (
+        {!activeStore ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
             <div className="flex size-16 items-center justify-center rounded-2xl bg-muted">
               <span className="text-3xl">🖥</span>
             </div>
-            <p className="font-semibold">请选择一个 Tap 实例</p>
+            <p className="font-semibold">暂无数据存储配置</p>
             <p className="text-sm text-muted-foreground">
-              从左侧列表中选择一个数据源开始监控
+              请先在设置页面添加 Store 配置
             </p>
           </div>
         ) : (
           <motion.div
-            key={activeTapId}
+            key={activeStore.id}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
@@ -128,33 +108,69 @@ export function MonitorPage() {
             <div className="flex flex-wrap items-center gap-3">
               <GranularitySelector
                 value={granularity}
-                onChange={(g) => setGranularity(g as GranularityName)}
+                onChange={setGranularity}
               />
 
-              {/* Datasource label */}
-              {activeTap && (
-                <span className="text-sm text-muted-foreground">
-                  当前数据源:{" "}
-                  <span className="font-medium text-foreground">
-                    {activeTap.name ?? activeTap.appId ?? activeTapId}
+              {/* Active store label */}
+              <span className="text-sm text-muted-foreground">
+                当前数据源:{" "}
+                <span className="font-medium text-foreground">
+                  {activeStore.name}
+                </span>
+                {activeStore.is_active && (
+                  <span className="ml-1.5 inline-flex items-center rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                    Active
                   </span>
-                </span>
-              )}
+                )}
+              </span>
 
-              {/* Last update timestamp */}
-              {dataUpdatedAt > 0 && (
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {isError ? (
-                    <span className="text-destructive">获取失败</span>
-                  ) : (
-                    <>上次更新: {new Date(dataUpdatedAt).toLocaleTimeString()}</>
-                  )}
-                </span>
-              )}
+              {/* Right-side controls */}
+              <div className="ml-auto flex items-center gap-2">
+                {/* Last update / error status */}
+                {dataUpdatedAt > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {isError ? (
+                      <span className="text-destructive">获取失败</span>
+                    ) : (
+                      <>上次更新: {new Date(dataUpdatedAt).toLocaleTimeString()}</>
+                    )}
+                  </span>
+                )}
+
+                {/* Manual refresh */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={() => void refetch()}
+                  disabled={isFetching}
+                  title="手动刷新"
+                >
+                  <RefreshCw
+                    className={isFetching ? "animate-spin" : ""}
+                    size={14}
+                  />
+                </Button>
+
+                {/* Grid cols toggle */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={toggleGridCols}
+                  title={gridCols === 2 ? "切换为单列" : "切换为双列"}
+                >
+                  {gridCols === 2 ? <Columns2 size={14} /> : <LayoutGrid size={14} />}
+                </Button>
+              </div>
             </div>
 
             {/* Charts grid */}
-            <MetricChartsGrid data={chartData} tapId={activeTapId} />
+            <MetricChartsGrid
+              data={chartData}
+              legendVisible={legendVisible}
+              gridCols={gridCols}
+            />
           </motion.div>
         )}
       </div>

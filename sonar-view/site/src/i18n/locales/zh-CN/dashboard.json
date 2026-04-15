@@ -5,7 +5,7 @@
     "logout": "退出登录"
   },
   "nav": {
-    "monitor": "监控",
+    "monitor": "实时监控",
     "snapshots": "快照",
     "taps": "采集器",
     "settings": "设置"

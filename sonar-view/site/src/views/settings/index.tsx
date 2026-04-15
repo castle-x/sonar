@@ -1,110 +1,78 @@
-import { useState } from "react";
-import { motion } from "motion/react";
-import { toast } from "sonner";
-import { Button } from "@/shared/shadcn/button";
-import { Input } from "@/shared/shadcn/input";
-import { useSettingsStore } from "@/stores/use-settings-store";
+import { useState } from "react"
+import { motion } from "motion/react"
+import { toast } from "sonner"
+import { Button } from "@/shared/shadcn/button"
+import { Input } from "@/shared/shadcn/input"
 import {
   useStoreConfigs,
   useCreateStoreConfig,
   useActivateStoreConfig,
   useDeleteStoreConfig,
-} from "@/shared/hooks/use-view-api";
+} from "@/shared/hooks/use-view-api"
 
 export function SettingsPage() {
-  const { viewServerUrl, setViewServerUrl } = useSettingsStore();
-  const [urlInput, setUrlInput] = useState(viewServerUrl);
+  const { data: storeConfigs = [], isLoading: configsLoading } = useStoreConfigs()
+  const createConfig = useCreateStoreConfig()
+  const activateConfig = useActivateStoreConfig()
+  const deleteConfig = useDeleteStoreConfig()
 
-  // Store configs
-  const { data: storeConfigs = [], isLoading: configsLoading } = useStoreConfigs();
-  const createConfig = useCreateStoreConfig();
-  const activateConfig = useActivateStoreConfig();
-  const deleteConfig = useDeleteStoreConfig();
-
-  // Add form state
-  const [newName, setNewName] = useState("");
-  const [newAddr, setNewAddr] = useState("");
-  const [newDesc, setNewDesc] = useState("");
-
-  const handleSaveUrl = () => {
-    setViewServerUrl(urlInput.trim() || "http://localhost:8283");
-    toast.success("设置已保存，请刷新页面生效");
-  };
+  const [newName, setNewName] = useState("")
+  const [newAddr, setNewAddr] = useState("")
+  const [newDesc, setNewDesc] = useState("")
 
   const handleAddConfig = async () => {
     if (!newName.trim() || !newAddr.trim()) {
-      toast.error("名称和地址为必填项");
-      return;
+      toast.error("名称和地址为必填项")
+      return
     }
     try {
       await createConfig.mutateAsync({
         name: newName.trim(),
         addr: newAddr.trim(),
         description: newDesc.trim(),
-      });
-      toast.success("数据源已添加");
-      setNewName("");
-      setNewAddr("");
-      setNewDesc("");
+      })
+      toast.success("数据源已添加")
+      setNewName("")
+      setNewAddr("")
+      setNewDesc("")
     } catch (e) {
-      toast.error("添加失败: " + String(e));
+      toast.error("添加失败: " + String(e))
     }
-  };
+  }
 
   const handleActivate = async (id: string) => {
     try {
-      await activateConfig.mutateAsync(id);
-      toast.success("已切换活跃数据源");
+      await activateConfig.mutateAsync(id)
+      toast.success("已切换活跃数据源")
     } catch (e) {
-      toast.error("切换失败: " + String(e));
+      toast.error("切换失败: " + String(e))
     }
-  };
+  }
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteConfig.mutateAsync(id);
-      toast.success("数据源已删除");
-    } catch (e) {
-      toast.error("删除失败: " + String(e));
+  const handleDelete = async (id: string, isActive: boolean) => {
+    if (isActive) {
+      toast.error("无法删除活跃数据源，请先切换到其他数据源")
+      return
     }
-  };
+    try {
+      await deleteConfig.mutateAsync(id)
+      toast.success("数据源已删除")
+    } catch (e) {
+      toast.error("删除失败: " + String(e))
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4 md:py-6 lg:px-6 max-w-2xl">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">设置</h1>
-        <p className="text-muted-foreground">配置 sonar-view 服务地址与数据源</p>
+        <p className="text-muted-foreground">管理 sonar-store 数据源连接</p>
       </div>
-
-      {/* sonar-view backend URL */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl border bg-card p-6"
-      >
-        <h2 className="mb-1 font-semibold">sonar-view 后端地址</h2>
-        <p className="mb-4 text-sm text-muted-foreground">
-          前端访问 sonar-view 后端的地址（默认 http://localhost:8283）
-        </p>
-        <div className="flex gap-2">
-          <Input
-            value={urlInput}
-            onChange={(e) => setUrlInput(e.target.value)}
-            placeholder="http://localhost:8283"
-            className="flex-1 font-mono text-sm"
-          />
-          <Button onClick={handleSaveUrl}>保存</Button>
-        </div>
-        <p className="mt-2 text-xs text-muted-foreground">
-          当前：<code className="rounded bg-muted px-1 py-0.5">{viewServerUrl}</code>
-        </p>
-      </motion.div>
 
       {/* Store configs list */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.08 }}
         className="rounded-xl border bg-card p-6"
       >
         <h2 className="mb-1 font-semibold">数据源（sonar-store）</h2>
@@ -158,8 +126,8 @@ export function SettingsPage() {
                     size="sm"
                     variant="ghost"
                     className="text-destructive hover:text-destructive"
-                    onClick={() => handleDelete(cfg.id)}
-                    disabled={deleteConfig.isPending}
+                    onClick={() => handleDelete(cfg.id, cfg.is_active)}
+                    disabled={deleteConfig.isPending || cfg.is_active}
                   >
                     删除
                   </Button>
@@ -174,7 +142,7 @@ export function SettingsPage() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.16 }}
+        transition={{ delay: 0.08 }}
         className="rounded-xl border bg-card p-6"
       >
         <h2 className="mb-1 font-semibold">添加数据源</h2>
@@ -219,5 +187,5 @@ export function SettingsPage() {
         </div>
       </motion.div>
     </div>
-  );
+  )
 }

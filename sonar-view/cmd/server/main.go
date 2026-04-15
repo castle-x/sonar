@@ -53,6 +53,7 @@ func main() {
 	snapshotRepo := repo.NewSnapshotRepo(sqlDB)
 	chunkRepo := repo.NewChunkRepo(sqlDB)
 	storeConfigRepo := repo.NewStoreConfigRepo(sqlDB)
+	aggLevelRepo := repo.NewAggLevelRepo(sqlDB)
 
 	// Create WebSocket Hub
 	hub := ws.NewHub()
@@ -61,9 +62,10 @@ func main() {
 	// Create services (must come before aggregation service if injected)
 	snapshotService := service.NewSnapshotService(snapshotRepo, chunkRepo)
 	storeConfigService := service.NewStoreConfigService(storeConfigRepo)
+	aggLevelService := service.NewAggLevelService(aggLevelRepo)
 
 	// Create aggregation service
-	aggService, err := service.NewAggregationService(cfg, hub, storeConfigService)
+	aggService, err := service.NewAggregationService(cfg, hub, storeConfigService, aggLevelService)
 	if err != nil {
 		log.Fatalf("[FATAL] create aggregation service failed: %v", err)
 	}
@@ -99,6 +101,7 @@ func main() {
 	storeConfigHandler := handler.NewStoreConfigHandler(storeConfigService)
 	aggHandler := handler.NewAggregationHandler(aggService.GetTSDB())
 	queryPointsHandler := handler.NewQueryPointsHandler(aggService.GetTSDB())
+	aggLevelHandler := handler.NewAggLevelHandler(aggLevelService)
 
 	// Create report service and handler
 	reportService := service.NewReportService(aggService.GetTSDB(), snapshotRepo, chunkRepo)
@@ -126,6 +129,7 @@ func main() {
 	mux.HandleFunc("GET /api/v1/aggregation/metrics", aggHandler.QueryMetrics)
 	mux.HandleFunc("GET /api/v1/aggregation/points", queryPointsHandler.QueryPoints)
 	mux.HandleFunc("POST /api/v1/aggregation/points/batch", queryPointsHandler.QueryPointsBatch)
+	mux.HandleFunc("GET /api/v1/aggregation/levels", aggLevelHandler.ListLevels)
 
 	// QueryPoints V2 - monitor_hub compatible compressed format
 	mux.HandleFunc("POST /api/v1/points/query", queryPointsHandler.QueryPointsV2)

@@ -2,7 +2,6 @@ import {
   Camera01Icon,
   ComputerIcon,
   Settings01Icon,
-  ServerStack01Icon,
 } from "@hugeicons/core-free-icons";
 import type { IconSvgElement } from "@hugeicons/react";
 
@@ -65,13 +64,6 @@ const navSections: NavSection[] = [
         icon: Camera01Icon,
         titleKey: "nav.snapshots",
         path: "snapshots",
-      },
-      {
-        type: "link",
-        key: "taps",
-        icon: ServerStack01Icon,
-        titleKey: "nav.taps",
-        path: "taps",
       },
     ],
   },

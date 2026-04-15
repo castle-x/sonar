@@ -38,6 +38,21 @@ func migrate(db *sql.DB) error {
 	_, _ = db.Exec(`ALTER TABLE store_configs ADD COLUMN is_active INTEGER DEFAULT 0`)
 	// 确保索引存在
 	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_store_configs_active ON store_configs(is_active, mark_deleted)`)
+	// aggregation_levels 表（新库通过 schema 建立，旧库通过此迁移补齐）
+	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS aggregation_levels (
+		id            INTEGER PRIMARY KEY AUTOINCREMENT,
+		name          TEXT    NOT NULL UNIQUE,
+		interval_ms   INTEGER NOT NULL,
+		retention_ms  INTEGER NOT NULL,
+		source        TEXT    NOT NULL DEFAULT 'raw',
+		min_points    INTEGER NOT NULL DEFAULT 1,
+		fallback_mode TEXT    NOT NULL DEFAULT 'skip',
+		description   TEXT    DEFAULT '',
+		sort_order    INTEGER NOT NULL DEFAULT 0,
+		created_at    INTEGER NOT NULL,
+		updated_at    INTEGER NOT NULL
+	)`)
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_agg_levels_order ON aggregation_levels(sort_order ASC)`)
 	return nil
 }
 
@@ -88,4 +103,21 @@ CREATE TABLE IF NOT EXISTS store_configs (
     updated_at   INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_store_configs_list ON store_configs(mark_deleted, created_at DESC);
+
+-- aggregation_levels stores cascade aggregation configuration.
+-- Durations are in milliseconds. sort_order controls evaluation order.
+CREATE TABLE IF NOT EXISTS aggregation_levels (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    name          TEXT    NOT NULL UNIQUE,
+    interval_ms   INTEGER NOT NULL,
+    retention_ms  INTEGER NOT NULL,
+    source        TEXT    NOT NULL DEFAULT 'raw',
+    min_points    INTEGER NOT NULL DEFAULT 1,
+    fallback_mode TEXT    NOT NULL DEFAULT 'skip',
+    description   TEXT    DEFAULT '',
+    sort_order    INTEGER NOT NULL DEFAULT 0,
+    created_at    INTEGER NOT NULL,
+    updated_at    INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_agg_levels_order ON aggregation_levels(sort_order ASC);
 `
