@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+	"sonar-view/pkg/aggregator"
 )
 
 // Config sonar-view 配置
@@ -24,9 +25,10 @@ type StoreConfig struct {
 }
 
 type AggConfig struct {
-	Enabled        bool          `yaml:"enabled" json:"enabled" mapstructure:"enabled"`
-	CollectTimeout time.Duration `yaml:"collect_timeout" json:"collect_timeout" mapstructure:"collect_timeout"`
-	QueryDelay     time.Duration `yaml:"query_delay" json:"query_delay" mapstructure:"query_delay"`
+	Enabled        bool                    `yaml:"enabled" json:"enabled" mapstructure:"enabled"`
+	CollectTimeout time.Duration           `yaml:"collect_timeout" json:"collect_timeout" mapstructure:"collect_timeout"`
+	QueryDelay     time.Duration           `yaml:"query_delay" json:"query_delay" mapstructure:"query_delay"`
+	Levels         []aggregator.LevelConfig `yaml:"levels" json:"levels" mapstructure:"levels"`
 }
 
 type TSDBConfig struct {

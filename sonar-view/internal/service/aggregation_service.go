@@ -19,10 +19,11 @@ type AggregationService struct {
 	triggerManager       *trigger.TriggerManager
 	cfg                  *config.Config
 	storeConfigService   *StoreConfigService
+	aggLevelService      *AggLevelService
 	startedAt            time.Time
 }
 
-func NewAggregationService(cfg *config.Config, eventPublisher aggregator.EventPublisher, storeConfigService *StoreConfigService) (*AggregationService, error) {
+func NewAggregationService(cfg *config.Config, eventPublisher aggregator.EventPublisher, storeConfigService *StoreConfigService, aggLevelService *AggLevelService) (*AggregationService, error) {
 	ctx := context.Background()
 
 	// Create trigger manager
@@ -45,8 +46,29 @@ func NewAggregationService(cfg *config.Config, eventPublisher aggregator.EventPu
 		return nil, fmt.Errorf("create TSDB failed: %w", err)
 	}
 
-	// Build aggregation config
-	aggCfg := aggregator.DefaultConfig()
+	// Build aggregation config — priority: SQLite DB > config.yaml levels > hardcoded defaults
+	var aggCfg *aggregator.Config
+	if aggLevelService != nil {
+		// If config.yaml has levels defined, seed from there (only if DB is empty)
+		if len(cfg.Aggregation.Levels) > 0 {
+			if seedErr := aggLevelService.EnsureDefaultsFromConfig(ctx, cfg.Aggregation.Levels); seedErr != nil {
+				log.Printf("[WARN] seed agg levels from config: %v", seedErr)
+			}
+		} else {
+			// Fall back to hardcoded defaults
+			if seedErr := aggLevelService.EnsureDefaults(ctx); seedErr != nil {
+				log.Printf("[WARN] seed agg levels: %v", seedErr)
+			}
+		}
+		var buildErr error
+		aggCfg, buildErr = aggLevelService.BuildAggConfig(ctx)
+		if buildErr != nil {
+			log.Printf("[WARN] build agg config from DB: %v — using defaults", buildErr)
+			aggCfg = aggregator.DefaultConfig()
+		}
+	} else {
+		aggCfg = aggregator.DefaultConfig()
+	}
 	aggCfg.Enabled = cfg.Aggregation.Enabled
 	if cfg.Aggregation.CollectTimeout > 0 {
 		aggCfg.CollectTimeout = cfg.Aggregation.CollectTimeout
@@ -74,6 +96,7 @@ func NewAggregationService(cfg *config.Config, eventPublisher aggregator.EventPu
 		triggerManager:     tm,
 		cfg:                cfg,
 		storeConfigService: storeConfigService,
+		aggLevelService:    aggLevelService,
 		startedAt:          time.Now(),
 	}, nil
 }
@@ -136,6 +159,11 @@ func (s *AggregationService) GetManager() *aggregator.Manager {
 // GetTSDB 获取 TSDB 存储
 func (s *AggregationService) GetTSDB() storage.Storage[aggregator.AggregatedPoint] {
 	return s.tsdb
+}
+
+// GetAggLevelService 获取聚合级别服务
+func (s *AggregationService) GetAggLevelService() *AggLevelService {
+	return s.aggLevelService
 }
 
 // GetStatus 获取服务状态
