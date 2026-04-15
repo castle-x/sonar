@@ -9,9 +9,15 @@ import type { StoreConfig } from "@/api/sonar-view/store-config/v1/types";
 export function useTaps() {
   return useQuery({
     queryKey: queryKeys.taps.all(),
-    queryFn: () => api.get<TapInstance[]>("/api/v1/taps"),
+    queryFn: async () => {
+      const resp = await api.get<{ list: TapInstance[]; total: number } | TapInstance[]>("/api/v1/taps");
+      // Backend returns {list: [...], total: N}
+      if (resp && !Array.isArray(resp) && 'list' in resp) {
+        return resp.list ?? [];
+      }
+      return Array.isArray(resp) ? resp : [];
+    },
     refetchInterval: 15_000,
-    // Return empty array on error so UI doesn't break
     placeholderData: [],
   });
 }
@@ -56,12 +62,16 @@ export function useAggregatedMetrics(params: AggregatedMetricsParams, enabled = 
 export function useSnapshots(filters?: { tapId?: string; status?: string }) {
   return useQuery({
     queryKey: queryKeys.snapshots.all(filters),
-    queryFn: () => {
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.tapId) params.set("tap_id", filters.tapId);
       if (filters?.status) params.set("status", filters.status);
       const qs = params.toString();
-      return api.get<SnapshotMeta[]>(`/api/v1/snapshots${qs ? `?${qs}` : ""}`);
+      const resp = await api.get<{ list: SnapshotMeta[]; total: number } | SnapshotMeta[]>(
+        `/api/v1/snapshots${qs ? `?${qs}` : ""}`
+      );
+      if (resp && !Array.isArray(resp) && 'list' in resp) return resp.list ?? [];
+      return Array.isArray(resp) ? resp : [];
     },
     placeholderData: [],
   });
