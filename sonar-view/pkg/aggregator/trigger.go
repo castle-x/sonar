@@ -4,7 +4,11 @@ import (
 	"context"
 	"sonar-view/pkg/trigger"
 	"time"
+
+	"github.com/castle-x/goutils/ablog"
 )
+
+var trigLog = ablog.NewLogger("agg-trigger")
 
 type AggregationTrigger struct {
 	manager  *Manager

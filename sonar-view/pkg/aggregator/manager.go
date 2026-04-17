@@ -7,8 +7,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/castle-x/goutils/ablog"
 	"github.com/prometheus/prometheus/model/labels"
 )
+
+var aggLog = ablog.NewLogger("aggregator")
 
 type EventPublisher interface {
 	PublishEvent(topic string, event interface{}) error
@@ -85,7 +88,7 @@ func (m *Manager) RunOnce(ctx context.Context, now time.Time) error {
 	firstLevel := m.config.Levels[0]
 	points, err := m.aggregateLevel(ctx, &firstLevel, now)
 	if err != nil {
-		fmt.Printf("[ERROR] aggregator: failed to aggregate %s: %v\n", firstLevel.Name, err)
+		aggLog.Error("failed to aggregate %s: %v", firstLevel.Name, err)
 	} else if len(points) > 0 {
 		allAggregatedPoints = append(allAggregatedPoints, points...)
 	}
@@ -94,7 +97,7 @@ func (m *Manager) RunOnce(ctx context.Context, now time.Time) error {
 		if m.isTimeBoundary(level, now) {
 			pts, err := m.aggregateLevel(ctx, level, now)
 			if err != nil {
-				fmt.Printf("[ERROR] aggregator: failed to aggregate %s: %v\n", level.Name, err)
+				aggLog.Error("failed to aggregate %s: %v", level.Name, err)
 			} else if len(pts) > 0 {
 				allAggregatedPoints = append(allAggregatedPoints, pts...)
 			}
@@ -171,9 +174,9 @@ func (m *Manager) collectAndAggregate(ctx context.Context, level *LevelConfig, t
 			st.FailureCount++
 			st.LastError = result.err.Error()
 			if collectCtx.Err() == context.DeadlineExceeded {
-				fmt.Printf("[WARN] aggregator: collect timeout from %s: %v\n", result.name, result.err)
+				aggLog.Warn("collect timeout from %s: %v", result.name, result.err)
 			} else {
-				fmt.Printf("[WARN] aggregator: collect from %s failed: %v\n", result.name, result.err)
+				aggLog.Warn("collect from %s failed: %v", result.name, result.err)
 			}
 		} else {
 			st.LastSuccess = now
@@ -276,7 +279,7 @@ func (m *Manager) CleanupExpiredData(ctx context.Context, now time.Time) error {
 			string(AggregatedInternalLabelAggregationLevel): level.Name,
 		})
 		if err != nil {
-			fmt.Printf("[ERROR] aggregator: cleanup level %s failed: %v\n", level.Name, err)
+			aggLog.Error("cleanup level %s failed: %v", level.Name, err)
 		}
 	}
 	return nil

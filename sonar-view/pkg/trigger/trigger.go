@@ -183,9 +183,12 @@ func (tm *TriggerManager) StartAll() {
 		names = append(names, name)
 	}
 	tm.mu.RUnlock()
+	logger.Info("trigger: StartAll called, %d triggers registered: %v", len(names), names)
 	for _, name := range names {
 		if err := tm.Start(name); err != nil {
 			logger.Warn("trigger: failed to start trigger (%s): %v", name, err)
+		} else {
+			logger.Info("trigger: started trigger (%s)", name)
 		}
 	}
 }

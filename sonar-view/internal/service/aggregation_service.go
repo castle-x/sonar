@@ -121,7 +121,7 @@ func (s *AggregationService) Start() error {
 				if collectorName == "" {
 					collectorName = cfg.ID
 				}
-				collector := aggregator.NewStoreCollector(cfg.Addr, s.cfg.Store.AppID)
+				collector := aggregator.NewStoreCollector(cfg.Addr, cfg.ID)
 				if err := s.manager.RegisterCollector(collectorName, collector); err != nil {
 					aggLogger.Warn("failed to register collector %s: %v", collectorName, err)
 				} else {
