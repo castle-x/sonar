@@ -25,18 +25,27 @@ type storeMetricQueryRequest struct {
 	EndTime   int64  `json:"end_time"`
 }
 
+// storeMetricPoint 对应 sonar-store 返回的单个数据点
+// label_list 是 [k1, v1, k2, v2, ...] 格式的平铺数组
 type storeMetricPoint struct {
-	Name      string            `json:"name"`
-	Labels    map[string]string `json:"labels"`
-	Timestamp int64             `json:"timestamp"`
-	Value     float64           `json:"value"`
-	AppID     string            `json:"app_id"`
+	Name      string   `json:"name"`
+	LabelList []string `json:"label_list"`
+	Timestamp int64    `json:"timestamp"`
+	Value     float64  `json:"value"`
+	AppID     string   `json:"app_id"`
 }
 
+// storeMetricQueryData 对应 sonar-store 返回的 data 字段
+type storeMetricQueryData struct {
+	Points []storeMetricPoint `json:"points"`
+}
+
+// storeMetricQueryResponse 对应 sonar-store 完整响应
+// {"code":0,"message":"success","data":{"points":[...]}}
 type storeMetricQueryResponse struct {
-	Code    int                `json:"code"`
-	Message string             `json:"message"`
-	Data    []storeMetricPoint `json:"data"`
+	Code    int                  `json:"code"`
+	Message string               `json:"message"`
+	Data    storeMetricQueryData `json:"data"`
 }
 
 func NewStoreCollector(storeAddr, appID string) *StoreCollector {
@@ -91,13 +100,12 @@ func (c *StoreCollector) Collect(ctx context.Context, startTime, endTime time.Ti
 		return nil, fmt.Errorf("store error: %s", queryResp.Message)
 	}
 
-	rawPoints := make([]RawMetricPoint, 0, len(queryResp.Data))
-	for _, p := range queryResp.Data {
-		// Build labels from map
-		labelPairs := make([]string, 0, len(p.Labels)*2)
-		for k, v := range p.Labels {
-			labelPairs = append(labelPairs, k, v)
-		}
+	points := queryResp.Data.Points
+	rawPoints := make([]RawMetricPoint, 0, len(points))
+	for _, p := range points {
+		// label_list 是 [k1, v1, k2, v2, ...] 平铺数组，直接传给 labels.FromStrings
+		labelPairs := p.LabelList
+
 		datasourceId := p.AppID
 		if datasourceId == "" {
 			datasourceId = c.appID
