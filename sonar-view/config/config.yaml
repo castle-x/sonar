@@ -46,14 +46,14 @@ aggregation:
       description: "近期趋势级别：30分钟聚合，保留24小时"
     - name: "1h"
       interval: 1h
-      retention: 7d
+      retention: 168h
       source: "30m"
       min_points: 2
       fallback_mode: "skip"
       description: "周级历史级别：1小时聚合，保留7天"
     - name: "6h"
       interval: 6h
-      retention: 30d
+      retention: 720h
       source: "1h"
       min_points: 6
       fallback_mode: "skip"
