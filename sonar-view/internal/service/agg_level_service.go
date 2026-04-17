@@ -3,12 +3,14 @@ package service
 import (
 	"context"
 	"fmt"
-	"log"
+	"github.com/castle-x/goutils/ablog"
 	"time"
 
 	"sonar-view/internal/repo"
 	"sonar-view/pkg/aggregator"
 )
+
+var aggLevelLogger = ablog.NewLogger("agg_level")
 
 // AggLevelService manages aggregation level configuration stored in SQLite.
 type AggLevelService struct {
@@ -34,7 +36,7 @@ func (s *AggLevelService) EnsureDefaults(ctx context.Context) error {
 	if err := s.repo.BulkInsert(ctx, defaults); err != nil {
 		return fmt.Errorf("seed agg levels: %w", err)
 	}
-	log.Printf("[INFO] aggregation levels seeded with %d default levels", len(defaults))
+	aggLevelLogger.Info("aggregation levels seeded with %d default levels", len(defaults))
 	return nil
 }
 
@@ -68,7 +70,7 @@ func (s *AggLevelService) EnsureDefaultsFromConfig(ctx context.Context, cfgLevel
 	if err := s.repo.BulkInsert(ctx, levels); err != nil {
 		return fmt.Errorf("seed agg levels from config: %w", err)
 	}
-	log.Printf("[INFO] aggregation levels seeded from config.yaml: %d levels", len(levels))
+	aggLevelLogger.Info("aggregation levels seeded from config.yaml: %d levels", len(levels))
 	return nil
 }
 
@@ -82,11 +84,11 @@ func (s *AggLevelService) List(ctx context.Context) ([]*repo.AggLevel, error) {
 func (s *AggLevelService) BuildAggConfig(ctx context.Context) (*aggregator.Config, error) {
 	levels, err := s.repo.ListOrdered(ctx)
 	if err != nil {
-		log.Printf("[WARN] failed to load agg levels from DB, using defaults: %v", err)
+		aggLevelLogger.Warn("failed to load agg levels from DB, using defaults: %v", err)
 		return aggregator.DefaultConfig(), nil
 	}
 	if len(levels) == 0 {
-		log.Printf("[WARN] no agg levels in DB, using defaults")
+		aggLevelLogger.Warn("no agg levels in DB, using defaults")
 		return aggregator.DefaultConfig(), nil
 	}
 

@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"github.com/castle-x/goutils/ablog"
 	"net/http"
 	"time"
 )
+
+var tapLogger = ablog.NewLogger("tap_mgmt")
 
 // TapManagementService handles remote management of tap instances
 type TapManagementService struct {
@@ -158,7 +160,7 @@ func (s *TapManagementService) GetTapStatus(ctx context.Context, tapAddr string)
 func (s *TapManagementService) GetAllTapStatus(ctx context.Context) ([]*TapStatus, error) {
 	taps, err := s.storeClient.GetTaps(ctx)
 	if err != nil {
-		log.Printf("[WARN] tap management: get taps from store failed: %v", err)
+		tapLogger.Warn("tap management: get taps from store failed: %v", err)
 		return make([]*TapStatus, 0), nil
 	}
 
@@ -166,7 +168,7 @@ func (s *TapManagementService) GetAllTapStatus(ctx context.Context) ([]*TapStatu
 	for _, tap := range taps {
 		status, err := s.GetTapStatus(ctx, tap.Addr)
 		if err != nil {
-			log.Printf("[WARN] tap management: get status from %s failed: %v", tap.Addr, err)
+			tapLogger.Warn("tap management: get status from %s failed: %v", tap.Addr, err)
 			status = &TapStatus{
 				ID:           tap.ID,
 				Name:         tap.AppID,

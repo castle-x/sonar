@@ -3,7 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
-	"log"
+	"github.com/castle-x/goutils/ablog"
 	"math"
 	"os"
 	"path/filepath"
@@ -19,6 +19,8 @@ import (
 	"github.com/prometheus/prometheus/tsdb"
 	"github.com/prometheus/prometheus/tsdb/chunkenc"
 )
+
+var logger = ablog.NewLogger("storage")
 
 type PrometheusStorage[T any] struct {
 	db             *tsdb.DB
@@ -93,7 +95,7 @@ func NewPrometheusStorage[T any](
 	if triggerManager != nil {
 		s.registerTriggers()
 	}
-	log.Printf("[INFO] storage: Prometheus storage initialized: dataDir=%s, retention=%d days", config.DataDir, config.RetentionDays)
+	logger.Info("storage: Prometheus storage initialized: dataDir=%s, retention=%d days", config.DataDir, config.RetentionDays)
 	return s, nil
 }
 
@@ -119,7 +121,7 @@ func (s *PrometheusStorage[T]) Write(ctx context.Context, points []T) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			log.Printf("[WARN] storage: write buffer full, dropping data point")
+			logger.Warn("storage: write buffer full, dropping data point")
 		}
 	}
 	return nil
@@ -284,7 +286,7 @@ func (s *PrometheusStorage[T]) writeWorker() {
 			return
 		}
 		if err := s.writeBatch(batch); err != nil {
-			log.Printf("[ERROR] storage: write batch failed: %v", err)
+			logger.Error("storage: write batch failed: %v", err)
 		}
 		batch = batch[:0]
 	}
@@ -312,7 +314,7 @@ func (s *PrometheusStorage[T]) writeBatch(points []*pendingDataPoint) error {
 	for _, point := range points {
 		_, err := appender.Append(0, point.labels, point.timestamp, point.value)
 		if err != nil {
-			log.Printf("[WARN] storage: append failed: %v", err)
+			logger.Warn("storage: append failed: %v", err)
 			continue
 		}
 	}

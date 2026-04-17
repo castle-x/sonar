@@ -1,13 +1,15 @@
 package dataprocess
 
 import (
-	"log"
+	"github.com/castle-x/goutils/ablog"
 	"math"
 	"strconv"
 	"time"
 
 	pkgaggregator "sonar-view/pkg/aggregator"
 )
+
+var logger = ablog.NewLogger("dataprocess")
 
 func BuildCompressedData(points []pkgaggregator.AggregatedPoint) *PointsResponse {
 	startTime := time.Now()
@@ -37,7 +39,7 @@ func BuildCompressedData(points []pkgaggregator.AggregatedPoint) *PointsResponse
 			V: point.Value,
 		})
 	}
-	log.Printf("[DEBUG] dataprocess: build compressed data: %v ms, %v points, %v keys",
+	logger.Debug("dataprocess: build compressed data: %v ms, %v points, %v keys",
 		time.Since(startTime).Milliseconds(), len(points), len(compressedData.K)/2)
 	return compressedData
 }

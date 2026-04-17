@@ -3,12 +3,14 @@ package trigger
 import (
 	"context"
 	"errors"
-	"log"
+	"github.com/castle-x/goutils/ablog"
 	"sync"
 	"time"
 
 	"github.com/robfig/cron/v3"
 )
+
+var logger = ablog.NewLogger("trigger")
 
 var (
 	ErrTriggerAlreadyExists   = errors.New("trigger already exists")
@@ -183,7 +185,7 @@ func (tm *TriggerManager) StartAll() {
 	tm.mu.RUnlock()
 	for _, name := range names {
 		if err := tm.Start(name); err != nil {
-			log.Printf("[WARN] trigger: failed to start trigger (%s): %v", name, err)
+			logger.Warn("trigger: failed to start trigger (%s): %v", name, err)
 		}
 	}
 }
@@ -197,7 +199,7 @@ func (tm *TriggerManager) StopAll() {
 	tm.mu.RUnlock()
 	for _, name := range names {
 		if err := tm.Stop(name); err != nil {
-			log.Printf("[WARN] trigger: failed to stop trigger (%s): %v", name, err)
+			logger.Warn("trigger: failed to stop trigger (%s): %v", name, err)
 		}
 	}
 }
@@ -217,7 +219,7 @@ func (tm *TriggerManager) Trigger(name string) error {
 	}
 	go func() {
 		if err := ctx.trigger.Execute(tm.ctx); err != nil {
-			log.Printf("[WARN] trigger: trigger (%s) execution failed: %v", name, err)
+			logger.Warn("trigger: trigger (%s) execution failed: %v", name, err)
 		}
 	}()
 	return nil
@@ -265,7 +267,7 @@ func (tm *TriggerManager) startIntervalTrigger(ctx context.Context, t IntervalTr
 				return
 			case <-ticker.C:
 				if err := t.Execute(ctx); err != nil {
-					log.Printf("[WARN] trigger: interval trigger (%s) failed: %v", t.Name(), err)
+					logger.Warn("trigger: interval trigger (%s) failed: %v", t.Name(), err)
 				}
 			}
 		}
@@ -280,12 +282,12 @@ func (tm *TriggerManager) startCronTrigger(ctx context.Context, t CronTrigger) {
 		_, err := c.AddFunc(t.CronExpr(), func() {
 			go func() {
 				if err := t.Execute(ctx); err != nil {
-					log.Printf("[WARN] trigger: cron trigger (%s) failed: %v", t.Name(), err)
+					logger.Warn("trigger: cron trigger (%s) failed: %v", t.Name(), err)
 				}
 			}()
 		})
 		if err != nil {
-			log.Printf("[ERROR] trigger: failed to parse cron expr for trigger (%s): %v", t.Name(), err)
+			logger.Error("trigger: failed to parse cron expr for trigger (%s): %v", t.Name(), err)
 			return
 		}
 		c.Start()
@@ -305,7 +307,7 @@ func (tm *TriggerManager) startOnceTrigger(ctx context.Context, t OnceTrigger) {
 		case <-ctx.Done():
 		case <-timer.C:
 			if err := t.Execute(ctx); err != nil {
-				log.Printf("[WARN] trigger: once trigger (%s) failed: %v", t.Name(), err)
+				logger.Warn("trigger: once trigger (%s) failed: %v", t.Name(), err)
 			}
 		}
 	}()
@@ -332,7 +334,7 @@ func (tm *TriggerManager) startEventTrigger(ctx context.Context, t EventTrigger)
 					err = t.Execute(ctx)
 				}
 				if err != nil {
-					log.Printf("[WARN] trigger: event trigger (%s) failed: %v", t.Name(), err)
+					logger.Warn("trigger: event trigger (%s) failed: %v", t.Name(), err)
 				}
 			}
 		}

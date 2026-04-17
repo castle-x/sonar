@@ -3,13 +3,15 @@ package ws
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"github.com/castle-x/goutils/ablog"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
+
+var logger = ablog.NewLogger("ws")
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
@@ -71,7 +73,7 @@ func (h *Hub) Run() {
 			h.mu.Lock()
 			h.clients[c] = true
 			h.mu.Unlock()
-			log.Printf("[INFO] ws: client connected, total=%d", len(h.clients))
+			logger.Info("ws: client connected, total=%d", len(h.clients))
 		case c := <-h.unregister:
 			h.mu.Lock()
 			if _, ok := h.clients[c]; ok {
@@ -79,7 +81,7 @@ func (h *Hub) Run() {
 				close(c.send)
 			}
 			h.mu.Unlock()
-			log.Printf("[INFO] ws: client disconnected, total=%d", len(h.clients))
+			logger.Info("ws: client disconnected, total=%d", len(h.clients))
 		case msg := <-h.broadcast:
 			data, err := json.Marshal(msg)
 			if err != nil {
@@ -130,7 +132,7 @@ func (h *Hub) BroadcastTopic(topic string, data interface{}) {
 func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Printf("[ERROR] ws: upgrade failed: %v", err)
+		logger.Error("ws: upgrade failed: %v", err)
 		return
 	}
 	c := &client{
@@ -169,12 +171,12 @@ func (c *client) readPump() {
 		case "subscribe":
 			if msg.Topic != "" {
 				c.topics[msg.Topic] = true
-				log.Printf("[DEBUG] ws: client subscribed to topic=%s", msg.Topic)
+				logger.Debug("ws: client subscribed to topic=%s", msg.Topic)
 			}
 		case "unsubscribe":
 			if msg.Topic != "" {
 				delete(c.topics, msg.Topic)
-				log.Printf("[DEBUG] ws: client unsubscribed from topic=%s", msg.Topic)
+				logger.Debug("ws: client unsubscribed from topic=%s", msg.Topic)
 			}
 		default:
 			// Legacy format: {subscribe:"topic"} / {unsubscribe:"topic"}

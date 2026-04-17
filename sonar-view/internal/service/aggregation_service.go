@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"log"
+	"github.com/castle-x/goutils/ablog"
 	"time"
 
 	"sonar-view/config"
@@ -11,6 +11,8 @@ import (
 	"sonar-view/pkg/storage"
 	"sonar-view/pkg/trigger"
 )
+
+var aggLogger = ablog.NewLogger("aggregation")
 
 // AggregationService 聚合服务
 type AggregationService struct {
@@ -52,18 +54,18 @@ func NewAggregationService(cfg *config.Config, eventPublisher aggregator.EventPu
 		// If config.yaml has levels defined, seed from there (only if DB is empty)
 		if len(cfg.Aggregation.Levels) > 0 {
 			if seedErr := aggLevelService.EnsureDefaultsFromConfig(ctx, cfg.Aggregation.Levels); seedErr != nil {
-				log.Printf("[WARN] seed agg levels from config: %v", seedErr)
+				aggLogger.Warn("seed agg levels from config: %v", seedErr)
 			}
 		} else {
 			// Fall back to hardcoded defaults
 			if seedErr := aggLevelService.EnsureDefaults(ctx); seedErr != nil {
-				log.Printf("[WARN] seed agg levels: %v", seedErr)
+				aggLogger.Warn("seed agg levels: %v", seedErr)
 			}
 		}
 		var buildErr error
 		aggCfg, buildErr = aggLevelService.BuildAggConfig(ctx)
 		if buildErr != nil {
-			log.Printf("[WARN] build agg config from DB: %v — using defaults", buildErr)
+			aggLogger.Warn("build agg config from DB: %v — using defaults", buildErr)
 			aggCfg = aggregator.DefaultConfig()
 		}
 	} else {
@@ -109,7 +111,7 @@ func (s *AggregationService) Start() error {
 	if s.storeConfigService != nil {
 		configs, err := s.storeConfigService.List(ctx)
 		if err != nil {
-			log.Printf("[WARN] failed to load store configs: %v", err)
+			aggLogger.Warn("failed to load store configs: %v", err)
 		} else {
 			for _, cfg := range configs {
 				if cfg == nil || cfg.Addr == "" {
@@ -121,9 +123,9 @@ func (s *AggregationService) Start() error {
 				}
 				collector := aggregator.NewStoreCollector(cfg.Addr, s.cfg.Store.AppID)
 				if err := s.manager.RegisterCollector(collectorName, collector); err != nil {
-					log.Printf("[WARN] failed to register collector %s: %v", collectorName, err)
+					aggLogger.Warn("failed to register collector %s: %v", collectorName, err)
 				} else {
-					log.Printf("[INFO] registered collector: %s (%s)", collectorName, cfg.Addr)
+					aggLogger.Info("registered collector: %s (%s)", collectorName, cfg.Addr)
 				}
 			}
 		}
@@ -138,7 +140,7 @@ func (s *AggregationService) Start() error {
 	}
 
 	s.triggerManager.StartAll()
-	log.Printf("[INFO] aggregation service started")
+	aggLogger.Info("aggregation service started")
 	return nil
 }
 
@@ -146,9 +148,9 @@ func (s *AggregationService) Start() error {
 func (s *AggregationService) Stop() {
 	s.triggerManager.Shutdown()
 	if err := s.tsdb.Close(); err != nil {
-		log.Printf("[ERROR] aggregation: close TSDB failed: %v", err)
+		aggLogger.Error("aggregation: close TSDB failed: %v", err)
 	}
-	log.Printf("[INFO] aggregation service stopped")
+	aggLogger.Info("aggregation service stopped")
 }
 
 // GetManager 获取聚合管理器

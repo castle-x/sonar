@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"github.com/castle-x/goutils/ablog"
 	"time"
 
 	"github.com/prometheus/prometheus/model/labels"
@@ -15,6 +15,8 @@ import (
 	"sonar-view/pkg/dataprocess"
 	"sonar-view/pkg/storage"
 )
+
+var reportLogger = ablog.NewLogger("report")
 
 // ReportService generates test reports from aggregated time series data
 type ReportService struct {
@@ -72,7 +74,7 @@ func (s *ReportService) GenerateReport(ctx context.Context, req *GenerateReportR
 	startMs := req.StartTime
 	endMs := req.EndTime
 
-	log.Printf("[INFO] report: generating report '%s' for %s (level=%s, %d-%d)",
+	reportLogger.Info("report: generating report '%s' for %s (level=%s, %d-%d)",
 		req.Name, req.AppID, req.Level, startMs, endMs)
 
 	// Build queries for the specified metrics and aggregation level
@@ -86,14 +88,14 @@ func (s *ReportService) GenerateReport(ctx context.Context, req *GenerateReportR
 	for _, query := range queries {
 		pts, err := s.tsdb.QueryByLabels(ctx, &query)
 		if err != nil {
-			log.Printf("[WARN] report: query failed: %v", err)
+			reportLogger.Warn("report: query failed: %v", err)
 			continue
 		}
 		allPoints = append(allPoints, pts...)
 	}
 
 	if len(allPoints) == 0 {
-		log.Printf("[WARN] report: no data found for report")
+		reportLogger.Warn("report: no data found for report")
 	}
 
 	// Compress the data
@@ -145,7 +147,7 @@ func (s *ReportService) GenerateReport(ctx context.Context, req *GenerateReportR
 		return "", fmt.Errorf("create snapshot: %w", err)
 	}
 
-	log.Printf("[INFO] report: generated report '%s' (id=%s, size=%d bytes)",
+	reportLogger.Info("report: generated report '%s' (id=%s, size=%d bytes)",
 		req.Name, snapshot.ID, snapshot.TotalBytes)
 
 	return snapshot.ID, nil

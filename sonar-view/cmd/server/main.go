@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"github.com/castle-x/goutils/ablog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,6 +17,8 @@ import (
 	"sonar-view/internal/ws"
 )
 
+var logger = ablog.NewLogger("main")
+
 func main() {
 	// Load config
 	cfgPath := os.Getenv("CONFIG_PATH")
@@ -25,7 +27,7 @@ func main() {
 	}
 	cfg, err := config.Load(cfgPath)
 	if err != nil {
-		log.Printf("[WARN] using default config: %v", err)
+		logger.Warn("using default config: %v", err)
 		cfg = config.DefaultConfig()
 	}
 
@@ -44,10 +46,10 @@ func main() {
 	}
 	sqlDB, err := db.Open(sqlitePath)
 	if err != nil {
-		log.Fatalf("[FATAL] open sqlite: %v", err)
+		logger.Fatal("[FATAL] open sqlite: %v", err)
 	}
 	defer sqlDB.Close()
-	log.Printf("[INFO] sqlite opened: %s", sqlitePath)
+	logger.Info("sqlite opened: %s", sqlitePath)
 
 	// Create repos
 	snapshotRepo := repo.NewSnapshotRepo(sqlDB)
@@ -67,10 +69,10 @@ func main() {
 	// Create aggregation service
 	aggService, err := service.NewAggregationService(cfg, hub, storeConfigService, aggLevelService)
 	if err != nil {
-		log.Fatalf("[FATAL] create aggregation service failed: %v", err)
+		logger.Fatal("[FATAL] create aggregation service failed: %v", err)
 	}
 	if err := aggService.Start(); err != nil {
-		log.Fatalf("[FATAL] start aggregation service failed: %v", err)
+		logger.Fatal("[FATAL] start aggregation service failed: %v", err)
 	}
 	defer aggService.Stop()
 
@@ -86,7 +88,7 @@ func main() {
 			created, err := storeConfigService.Create(context.Background(), "default", cfg.Store.Addr, "Auto-created from config")
 			if err == nil {
 				_ = storeConfigRepo.SetActive(context.Background(), created.ID)
-				log.Printf("[INFO] bootstrapped default store config: %s", cfg.Store.Addr)
+				logger.Info("bootstrapped default store config: %s", cfg.Store.Addr)
 			}
 		}
 	}
@@ -185,27 +187,27 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	log.Printf("[INFO] sonar-view starting on %s", cfg.Addr)
+	logger.Info("sonar-view starting on %s", cfg.Addr)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("[FATAL] server error: %v", err)
+			logger.Fatal("[FATAL] server error: %v", err)
 		}
 	}()
 
 	<-quit
-	log.Printf("[INFO] shutting down server...")
+	logger.Info("shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Printf("[ERROR] server shutdown error: %v", err)
+		logger.Error("server shutdown error: %v", err)
 	}
-	log.Printf("[INFO] server stopped")
+	logger.Info("server stopped")
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
