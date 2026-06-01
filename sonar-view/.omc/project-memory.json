@@ -170,6 +170,36 @@
   },
   "hotPaths": [
     {
+      "path": "pkg/aggregator/manager.go",
+      "accessCount": 7,
+      "lastAccessed": 1776421805721,
+      "type": "file"
+    },
+    {
+      "path": "pkg/trigger/trigger.go",
+      "accessCount": 6,
+      "lastAccessed": 1776421633492,
+      "type": "file"
+    },
+    {
+      "path": "internal/service/aggregation_service.go",
+      "accessCount": 6,
+      "lastAccessed": 1776421912323,
+      "type": "file"
+    },
+    {
+      "path": "internal/handler/query_handler.go",
+      "accessCount": 4,
+      "lastAccessed": 1776421874381,
+      "type": "file"
+    },
+    {
+      "path": "pkg/storage/prometheus.go",
+      "accessCount": 3,
+      "lastAccessed": 1776421579591,
+      "type": "file"
+    },
+    {
       "path": "config/config.go",
       "accessCount": 2,
       "lastAccessed": 1776160724609,
@@ -215,6 +245,54 @@
       "path": "api/sonar-view/store-config/v1/store-config.thrift",
       "accessCount": 1,
       "lastAccessed": 1776162374173,
+      "type": "file"
+    },
+    {
+      "path": "pkg/aggregator/store_collector.go",
+      "accessCount": 1,
+      "lastAccessed": 1776419774669,
+      "type": "file"
+    },
+    {
+      "path": "pkg/aggregator/trigger.go",
+      "accessCount": 1,
+      "lastAccessed": 1776419796176,
+      "type": "file"
+    },
+    {
+      "path": "pkg/aggregator/config.go",
+      "accessCount": 1,
+      "lastAccessed": 1776419811125,
+      "type": "file"
+    },
+    {
+      "path": "internal/service/agg_level_service.go",
+      "accessCount": 1,
+      "lastAccessed": 1776419956184,
+      "type": "file"
+    },
+    {
+      "path": "internal/handler",
+      "accessCount": 1,
+      "lastAccessed": 1776421813387,
+      "type": "directory"
+    },
+    {
+      "path": "pkg/aggregator/types.go",
+      "accessCount": 1,
+      "lastAccessed": 1776421839843,
+      "type": "directory"
+    },
+    {
+      "path": "pkg/aggregator",
+      "accessCount": 1,
+      "lastAccessed": 1776421851499,
+      "type": "directory"
+    },
+    {
+      "path": "config/config.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1776422003588,
       "type": "file"
     }
   ],
